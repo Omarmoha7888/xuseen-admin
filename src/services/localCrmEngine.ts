@@ -701,13 +701,76 @@ class LocalCRMEngine {
       return newOrder as unknown as T;
     }
 
-    // 7. Orders: Single Order
+    // 7. Orders: Single Order (GET & DELETE)
     const orderMatch = cleanEndpoint.match(/^\/orders\/([^\/]+)$/);
     if (orderMatch && method === 'GET') {
       const id = orderMatch[1];
       const ord = this.db.orders.find((o) => o.id === id || o.order_number === id);
       if (!ord) throw new Error('Order not found');
       return ord as unknown as T;
+    }
+
+    if (orderMatch && method === 'DELETE') {
+      const id = orderMatch[1];
+      const active = this.getActiveUser();
+      if (active.role !== 'super_admin') {
+        throw new Error('You do not have permission to delete orders (Super Admin only).');
+      }
+      const idx = this.db.orders.findIndex((o) => o.id === id || o.order_number === id);
+      if (idx !== -1) {
+        const deleted = this.db.orders.splice(idx, 1)[0];
+
+        // Clean up customer stats
+        const cust = this.db.customers.find((c) => c.id === deleted.customer_id);
+        if (cust) {
+          cust.orders_count = Math.max(0, (cust.orders_count || 1) - 1);
+          cust.total_debt = Math.max(0, (cust.total_debt || 0) - (deleted.outstanding_debt || 0));
+        }
+
+        // Remove associated payments
+        this.db.payments = this.db.payments.filter((p) => p.order_id !== deleted.id && p.order_id !== deleted.order_number);
+
+        // Remove associated transactions
+        this.db.transactions = this.db.transactions.filter((t) => t.order_id !== deleted.id && t.order_id !== deleted.order_number);
+
+        // Log activity
+        this.db.activity_logs.unshift({
+          id: `act-${Date.now()}`,
+          user_id: active.id,
+          username: active.username,
+          action: 'Order Deleted',
+          entity_type: 'order',
+          entity_id: deleted.order_number,
+          details: `Deleted by: ${active.username} | Deleted order ${deleted.order_number}`,
+          created_at: new Date().toISOString(),
+        });
+
+        this.saveDB();
+      }
+      return { success: true, message: 'Order successfully deleted.' } as unknown as T;
+    }
+
+    // 7b. Orders: Financial Adjustments
+    const adjustMatch = cleanEndpoint.match(/^\/orders\/([^\/]+)\/adjustments$/);
+    if (adjustMatch && method === 'POST') {
+      const id = adjustMatch[1];
+      const ord = this.db.orders.find((o) => o.id === id || o.order_number === id);
+      if (!ord) throw new Error('Order not found');
+      const active = this.getActiveUser();
+      if (active.role !== 'super_admin') {
+        throw new Error('You do not have permission to adjust financials.');
+      }
+      if (body.new_price !== undefined) {
+        ord.total_price = Number(body.new_price);
+        ord.outstanding_debt = Math.max(0, ord.total_price - ord.amount_paid);
+      } else if (body.adjustment_amount !== undefined) {
+        ord.outstanding_debt = Math.max(0, ord.outstanding_debt + Number(body.adjustment_amount));
+        ord.total_price = ord.amount_paid + ord.outstanding_debt;
+      }
+      ord.payment_type = ord.outstanding_debt > 0 ? 'Debt' : 'Paid';
+      ord.updated_at = new Date().toISOString();
+      this.saveDB();
+      return { message: 'Debt updated successfully', order: ord } as unknown as T;
     }
 
     // 8. Orders: Update status
@@ -815,7 +878,7 @@ class LocalCRMEngine {
       return newCust as unknown as T;
     }
 
-    // 13. Customers: Single with Orders
+    // 13. Customers: Single with Orders (GET & DELETE)
     const custMatch = cleanEndpoint.match(/^\/customers\/([^\/]+)$/);
     if (custMatch && method === 'GET') {
       const id = custMatch[1];
@@ -823,6 +886,17 @@ class LocalCRMEngine {
       if (!customer) throw new Error('Customer not found');
       const orders = this.db.orders.filter((o) => o.customer_id === id);
       return { customer, orders } as unknown as T;
+    }
+
+    if (custMatch && method === 'DELETE') {
+      const id = custMatch[1];
+      const active = this.getActiveUser();
+      if (active.role !== 'super_admin') {
+        throw new Error('Only Super Admin can delete customers.');
+      }
+      this.db.customers = this.db.customers.filter((c) => c.id !== id);
+      this.saveDB();
+      return { success: true, message: 'Customer deleted successfully' } as unknown as T;
     }
 
     // 14. AR Report
@@ -845,9 +919,84 @@ class LocalCRMEngine {
       return this.db.transactions as unknown as T;
     }
 
-    // 16. Employees
+    // 16. Employees (List, Create, Update, Delete)
     if (cleanEndpoint === '/employees' && method === 'GET') {
       return this.db.users.map(({ password_plain, ...u }) => u) as unknown as T;
+    }
+
+    if (cleanEndpoint === '/employees' && method === 'POST') {
+      const active = this.getActiveUser();
+      if (active.role !== 'super_admin') {
+        throw new Error('Only Super Admin can create employees.');
+      }
+      const newEmp: User & { password_plain: string } = {
+        id: `usr-emp-${Date.now()}`,
+        username: (body.username || '').toLowerCase().trim(),
+        role: body.role || 'employee',
+        status: 'active',
+        failed_login_attempts: 0,
+        password_plain: body.password || '123456',
+        created_at: new Date().toISOString(),
+        profile: {
+          id: `prof-${Date.now()}`,
+          user_id: `usr-emp-${Date.now()}`,
+          full_name: body.full_name || body.username,
+          phone: body.phone || '',
+          email: body.email || '',
+          department: body.department || 'Operations',
+          avatar: '',
+        },
+      };
+      this.db.users.push(newEmp);
+      this.saveDB();
+      const { password_plain, ...safeEmp } = newEmp;
+      return safeEmp as unknown as T;
+    }
+
+    const empMatch = cleanEndpoint.match(/^\/employees\/([^\/]+)$/);
+    if (empMatch && method === 'PATCH') {
+      const id = empMatch[1];
+      const emp = this.db.users.find((u) => u.id === id);
+      if (!emp) throw new Error('Employee not found');
+      if (body.full_name) emp.profile.full_name = body.full_name;
+      if (body.phone) emp.profile.phone = body.phone;
+      if (body.department) emp.profile.department = body.department;
+      if (body.status) emp.status = body.status;
+      this.saveDB();
+      const { password_plain, ...safeEmp } = emp;
+      return safeEmp as unknown as T;
+    }
+
+    if (empMatch && method === 'DELETE') {
+      const id = empMatch[1];
+      const active = this.getActiveUser();
+      if (active.role !== 'super_admin') {
+        throw new Error('Only Super Admin can delete employees.');
+      }
+      const idx = this.db.users.findIndex((u) => u.id === id);
+      if (idx !== -1 && this.db.users[idx].role !== 'super_admin') {
+        this.db.users.splice(idx, 1);
+        this.saveDB();
+      }
+      return { success: true, message: 'Employee removed successfully' } as unknown as T;
+    }
+
+    const empPassMatch = cleanEndpoint.match(/^\/employees\/([^\/]+)\/change-password$/);
+    if (empPassMatch && method === 'POST') {
+      const id = empPassMatch[1];
+      const emp = this.db.users.find((u) => u.id === id);
+      if (!emp) throw new Error('Employee not found');
+      emp.password_plain = body.new_password || '123456';
+      this.saveDB();
+      return { success: true, message: 'Password updated successfully' } as unknown as T;
+    }
+
+    const empActMatch = cleanEndpoint.match(/^\/employees\/([^\/]+)\/activity$/);
+    if (empActMatch && method === 'GET') {
+      const id = empActMatch[1];
+      const emp = this.db.users.find((u) => u.id === id);
+      if (!emp) return [] as unknown as T;
+      return this.db.activity_logs.filter((a) => a.username === emp.username) as unknown as T;
     }
 
     // 17. Conversations & Messaging

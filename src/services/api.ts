@@ -280,14 +280,12 @@ export const api = {
   },
 
   async deleteOrder(id: string): Promise<any> {
-    clearApiCache('orders');
-    clearApiCache(`order_${id}`);
-    clearApiCache('reports');
-    clearApiCache('ar');
-    clearApiCache('transactions');
-    return request<any>(`/orders/${id}`, {
+    clearApiCache();
+    const result = await request<any>(`/orders/${id}`, {
       method: 'DELETE',
     });
+    clearApiCache();
+    return result;
   },
 
   // Financials & AR

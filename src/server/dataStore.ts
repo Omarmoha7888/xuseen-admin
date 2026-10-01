@@ -1664,6 +1664,20 @@ class DatabaseManager {
     if (idx === -1) throw new Error('Order not found.');
 
     const deleted = this.db.orders.splice(idx, 1)[0];
+
+    // Remove associated payments
+    this.db.payments = this.db.payments.filter((p) => p.order_id !== deleted.id && p.order_id !== deleted.order_number);
+
+    // Remove or adjust associated transactions
+    this.db.transactions = this.db.transactions.filter((t) => t.order_id !== deleted.id && t.order_id !== deleted.order_number);
+
+    // Update customer debt and order count
+    const cust = this.db.customers.find((c) => c.id === deleted.customer_id);
+    if (cust) {
+      cust.orders_count = Math.max(0, (cust.orders_count || 1) - 1);
+      cust.total_debt = Math.max(0, (cust.total_debt || 0) - (deleted.outstanding_debt || 0));
+    }
+
     this.logActivity({
       user_id: user.id,
       username: user.username,
@@ -1673,6 +1687,8 @@ class DatabaseManager {
       details: `Deleted by: ${user.username} | Deleted order ${deleted.order_number}`,
       previous_value: deleted,
     });
+
+    this.saveToDisk();
 
     return true;
   }
@@ -2278,6 +2294,7 @@ class DatabaseManager {
       created_at: new Date().toISOString(),
     };
     this.db.activity_logs.unshift(newLog);
+    this.saveToDisk();
     return newLog;
   }
 

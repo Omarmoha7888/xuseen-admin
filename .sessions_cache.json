@@ -79,5 +79,14 @@
       "role": "super_admin",
       "expiresAt": 1791463959670
     }
+  ],
+  [
+    "sess_SqmOpWWTqVsOqaOfP_00zvDBwpvvfkonN4FavTE0ONo_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNDY0OTgzODIzLCJybmQiOiJjM2FjYTNkNWM4YTE5MWEzIn0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791464983823
+    }
   ]
 ]

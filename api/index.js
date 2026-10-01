@@ -25972,6 +25972,13 @@ var DatabaseManager = class {
     const idx = this.db.orders.findIndex((o) => o.id === orderId || o.order_number === orderId);
     if (idx === -1) throw new Error("Order not found.");
     const deleted = this.db.orders.splice(idx, 1)[0];
+    this.db.payments = this.db.payments.filter((p) => p.order_id !== deleted.id && p.order_id !== deleted.order_number);
+    this.db.transactions = this.db.transactions.filter((t) => t.order_id !== deleted.id && t.order_id !== deleted.order_number);
+    const cust = this.db.customers.find((c) => c.id === deleted.customer_id);
+    if (cust) {
+      cust.orders_count = Math.max(0, (cust.orders_count || 1) - 1);
+      cust.total_debt = Math.max(0, (cust.total_debt || 0) - (deleted.outstanding_debt || 0));
+    }
     this.logActivity({
       user_id: user.id,
       username: user.username,
@@ -25981,6 +25988,7 @@ var DatabaseManager = class {
       details: `Deleted by: ${user.username} | Deleted order ${deleted.order_number}`,
       previous_value: deleted
     });
+    this.saveToDisk();
     return true;
   }
   // Payments & Financials
@@ -26485,6 +26493,7 @@ var DatabaseManager = class {
       created_at: (/* @__PURE__ */ new Date()).toISOString()
     };
     this.db.activity_logs.unshift(newLog);
+    this.saveToDisk();
     return newLog;
   }
   getActivityLogs(user, filters) {
