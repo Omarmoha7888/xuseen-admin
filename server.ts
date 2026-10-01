@@ -1,5 +1,4 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { createServer as createViteServer } from 'vite';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -15,7 +14,9 @@ interface SessionData {
   expiresAt: number;
 }
 
-const SESSIONS_FILE = path.join(process.cwd(), '.sessions_cache.json');
+const SESSIONS_FILE = process.env.VERCEL
+  ? path.join('/tmp', '.sessions_cache.json')
+  : path.join(process.cwd(), '.sessions_cache.json');
 const HMAC_SECRET = process.env.SESSION_SECRET || 'balcad-crm-secure-session-key-2026';
 
 const sessions: Map<string, SessionData> = new Map();
@@ -113,6 +114,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// URL normalization for serverless functions on Vercel
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  if (process.env.VERCEL && req.url && !req.url.startsWith('/api')) {
+    req.url = `/api${req.url.startsWith('/') ? req.url : `/${req.url}`}`;
+  }
+  next();
+});
 
 // Auth Middleware
 function authenticateUser(req: Request, res: Response, next: NextFunction) {
@@ -746,10 +755,17 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // -------------------------------------------------------------
-// VITE DEV SERVER INTEGRATION
+// VITE DEV SERVER / STANDALONE PRODUCTION SERVER
 // -------------------------------------------------------------
 async function startServer() {
+  if (process.env.VERCEL) {
+    return; // Standalone server loop is not used in Vercel Serverless environment
+  }
+
+  const serverPort = Number(process.env.PORT) || PORT;
+
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -762,11 +778,15 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Balcad Travel Agency CRM Server running on port ${PORT}`);
+  app.listen(serverPort, '0.0.0.0', () => {
+    console.log(`Balcad Travel Agency CRM Server running on port ${serverPort}`);
   });
 }
 
-startServer().catch((err) => {
-  console.error('Failed to start CRM server:', err);
-});
+if (!process.env.VERCEL) {
+  startServer().catch((err) => {
+    console.error('Failed to start CRM server:', err);
+  });
+}
+
+export default app;

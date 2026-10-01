@@ -1177,7 +1177,9 @@ export function createSeedData(): CRMDatabase {
 }
 
 // In-memory persistent database singleton
-const DB_STORAGE_FILE = path.join(process.cwd(), '.crm_database.json');
+const DB_STORAGE_FILE = process.env.VERCEL
+  ? path.join('/tmp', '.crm_database.json')
+  : path.join(process.cwd(), '.crm_database.json');
 
 class DatabaseManager {
   private db: CRMDatabase = createSeedData();
