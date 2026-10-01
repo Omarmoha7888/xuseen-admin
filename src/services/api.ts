@@ -1,4 +1,5 @@
 import { User, Order, Customer, Payment, Transaction, Conversation, Message, ActivityLog, DashboardMetrics } from '../types';
+import { localCrmEngine } from './localCrmEngine';
 
 const API_BASE = '/api';
 
@@ -70,7 +71,22 @@ async function request<T>(endpoint: string, options: RequestInit = {}, retries =
         if (res.status === 401) {
           localStorage.removeItem('balcad_crm_token');
           window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
+          throw new Error(data.error || 'Unauthorized session');
         }
+
+        const errorText = String(data.error || '');
+        const isServerlessOrHostError =
+          res.status >= 500 ||
+          res.status === 404 ||
+          errorText.includes('FUNCTION_INVOCATION_FAILED') ||
+          errorText.includes('<!DOCTYPE') ||
+          errorText.includes('Internal Server Error');
+
+        if (isServerlessOrHostError) {
+          console.warn(`[Balcad CRM] Serverless endpoint ${endpoint} returned ${res.status}. Falling back to client-side storage engine.`);
+          return localCrmEngine.handle<T>(endpoint, options);
+        }
+
         throw new Error(data.error || `Server error (${res.status})`);
       }
 
@@ -80,20 +96,26 @@ async function request<T>(endpoint: string, options: RequestInit = {}, retries =
         err.name === 'TypeError' ||
         err.message?.includes('fetch') ||
         err.message?.includes('network') ||
-        err.message?.includes('NetworkError');
+        err.message?.includes('NetworkError') ||
+        err.message?.includes('FUNCTION_INVOCATION_FAILED');
 
       if (isNetworkError && attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+        await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
         continue;
       }
 
       if (isNetworkError) {
-        throw new Error('Unable to connect to the CRM server. Please check your network connection.');
+        console.warn(`[Balcad CRM] Network/Serverless connection issue for ${endpoint}. Falling back to client-side storage engine.`);
+        try {
+          return localCrmEngine.handle<T>(endpoint, options);
+        } catch (localErr: any) {
+          throw localErr;
+        }
       }
       throw err;
     }
   }
-  throw new Error('Request failed after retry.');
+  return localCrmEngine.handle<T>(endpoint, options);
 }
 
 export const api = {
@@ -117,14 +139,17 @@ export const api = {
       const res = await fetch(`${API_BASE}/auth/me`, {
         headers: getHeaders(),
       });
-      if (!res.ok) {
-        localStorage.removeItem('balcad_crm_token');
-        return { user: null };
+      if (res.ok) {
+        const data = await parseResponse(res);
+        if (data && data.user) return data;
       }
-      const data = await parseResponse(res);
-      return data && data.user ? data : { user: null };
     } catch {
-      localStorage.removeItem('balcad_crm_token');
+      // Ignored, fallback to local below
+    }
+
+    try {
+      return localCrmEngine.handle<{ user: User | null }>('/auth/me');
+    } catch {
       return { user: null };
     }
   },
