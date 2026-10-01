@@ -1,0 +1,29 @@
+[
+  [
+    "sess_PS5NL8HojuxBq7aGfifG5mh3wTK-WgT7yhgCvEfLdlQ_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNDUxMTQ2MTUyLCJybmQiOiI1MWVhZGJhMTc0YmQyZGQ0In0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791451146152
+    }
+  ],
+  [
+    "sess_Ov0wtng6LFF93ERYQ61C4RdmgpKS6A-Unkn2_da457w_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNDUxMTQ4NTE2LCJybmQiOiIwZGRkODhjYWIwY2Y3MDk5In0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791451148516
+    }
+  ],
+  [
+    "sess_xiZ0LK-sELZbR55jnJdYtIoX0hzVAZ468uKRYtzrLsk_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNDUxMjA2NjIxLCJybmQiOiJiMDJlMzU4OWY2ZjFhOWQ1In0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791451206621
+    }
+  ]
+]
