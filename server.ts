@@ -117,8 +117,18 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // URL normalization for serverless functions on Vercel
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  if (process.env.VERCEL && req.url && !req.url.startsWith('/api')) {
-    req.url = `/api${req.url.startsWith('/') ? req.url : `/${req.url}`}`;
+  if (process.env.VERCEL) {
+    const matched = (req.headers['x-matched-path'] || req.headers['x-vercel-matched-path']) as string;
+    if (matched && matched.startsWith('/api/')) {
+      req.url = matched;
+    } else if (req.url && (req.url === '/api/index.js' || req.url === '/api/index' || req.url === '/api')) {
+      const original = (req as any).originalUrl;
+      if (original && original.startsWith('/api/')) {
+        req.url = original;
+      }
+    } else if (req.url && !req.url.startsWith('/api')) {
+      req.url = `/api${req.url.startsWith('/') ? req.url : `/${req.url}`}`;
+    }
   }
   next();
 });

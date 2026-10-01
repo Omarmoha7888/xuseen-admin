@@ -34,5 +34,32 @@
       "role": "super_admin",
       "expiresAt": 1791453166655
     }
+  ],
+  [
+    "sess_OPVC6x_PbSL4ky4PKImBE9GbBkY6gLTK73c63JYz8Pg_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNDYyMTE5MjE5LCJybmQiOiJmY2YzOTdjZGFlOGVmNTYyIn0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791462119219
+    }
+  ],
+  [
+    "sess_bYemjvjDXer7Vntv-d7Jyz8Z3yvSalzL1iJVWCTgteQ_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNDYyMTUxMTQ1LCJybmQiOiJiZTlkNmM2ZGQ1MDdhZTBjIn0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791462151145
+    }
+  ],
+  [
+    "sess_6YEgRl3q4O8CzK7eqwmAqK6d1XkkFFVj60q9Xsm3ndQ_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNDYyMTU3NDQwLCJybmQiOiI3NzBlNmY5ZDdhZDU1ZWIyIn0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791462157440
+    }
   ]
 ]
