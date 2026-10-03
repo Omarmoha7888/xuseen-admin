@@ -44,25 +44,21 @@ export const OrdersListView: React.FC<OrdersListViewProps> = ({
 
   // Sync if initialFilter or initialServiceFilter changes from navigation
   useEffect(() => {
-    if (initialFilter) {
-      setSelectedStatus(initialFilter);
-    }
+    setSelectedStatus(initialFilter || 'All');
   }, [initialFilter]);
 
   useEffect(() => {
-    if (initialServiceFilter) {
-      setSelectedService(initialServiceFilter);
-    }
+    setSelectedService(initialServiceFilter || 'All');
   }, [initialServiceFilter]);
 
   useEffect(() => {
     loadOrders();
   }, []);
 
-  const loadOrders = async () => {
+  const loadOrders = async (forceRefresh = false) => {
     setLoading(true);
     try {
-      const data = await api.getOrders();
+      const data = await api.getOrders(undefined, forceRefresh);
       setAllOrders(data);
     } catch (err: any) {
       console.warn('Orders load notification:', err);
@@ -174,7 +170,7 @@ export const OrdersListView: React.FC<OrdersListViewProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={loadOrders}
+            onClick={() => loadOrders(true)}
             disabled={loading}
             title="Refresh Orders"
             className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition active:scale-95 duration-75 cursor-pointer disabled:opacity-50"

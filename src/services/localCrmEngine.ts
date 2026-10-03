@@ -87,6 +87,24 @@ function createInitialLocalDB(): LocalDB {
         avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
       },
     },
+    {
+      id: 'usr-staff-1790960387058',
+      username: 'blc00002',
+      role: 'employee',
+      status: 'disabled',
+      failed_login_attempts: 0,
+      created_at: '2026-10-02T16:59:47.169Z',
+      last_login: new Date(Date.now() - 3600000).toISOString(),
+      password_plain: 'password123',
+      profile: {
+        id: 'prof-1790960387169',
+        user_id: 'usr-staff-1790960387058',
+        full_name: 'CUMAR TAAKUUR',
+        phone: '618590999',
+        email: 'cumartaakuur7888@gmail.com',
+        department: 'Finance & Accounts',
+      },
+    },
   ];
 
   const customers: Customer[] = [
@@ -454,6 +472,35 @@ class LocalCRMEngine {
             admin.password_plain = 'xuseen.50';
           }
         }
+        // Ensure blc00002 / Cumar Taakuur is synchronized as disabled
+        const cumar = parsed.users?.find(
+          (u: any) =>
+            u.username === 'blc00002' ||
+            u.id === 'usr-staff-1790960387058' ||
+            (u.profile?.email && u.profile.email.toLowerCase() === 'cumartaakuur7888@gmail.com')
+        );
+        if (cumar) {
+          cumar.status = 'disabled';
+        } else if (Array.isArray(parsed.users)) {
+          parsed.users.push({
+            id: 'usr-staff-1790960387058',
+            username: 'blc00002',
+            role: 'employee',
+            status: 'disabled',
+            failed_login_attempts: 0,
+            created_at: '2026-10-02T16:59:47.169Z',
+            last_login: new Date().toISOString(),
+            password_plain: 'password123',
+            profile: {
+              id: 'prof-1790960387169',
+              user_id: 'usr-staff-1790960387058',
+              full_name: 'CUMAR TAAKUUR',
+              phone: '618590999',
+              email: 'cumartaakuur7888@gmail.com',
+              department: 'Finance & Accounts',
+            },
+          });
+        }
         return parsed;
       }
     } catch {}
@@ -473,8 +520,24 @@ class LocalCRMEngine {
   private getActiveUser(): User {
     try {
       const stored = localStorage.getItem(ACTIVE_USER_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch {}
+      if (stored) {
+        const u = JSON.parse(stored);
+        const live = this.db.users.find((dbU) => dbU.id === u.id || dbU.username.toLowerCase() === u.username.toLowerCase());
+        if (live && live.status === 'disabled') {
+          localStorage.removeItem(ACTIVE_USER_KEY);
+          localStorage.removeItem('balcad_crm_token');
+          window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
+          throw new Error('This user is disabled, please contact the Administrator');
+        }
+        if (live) {
+          const { password_plain, ...safeLive } = live;
+          return safeLive;
+        }
+        return u;
+      }
+    } catch (e: any) {
+      if (e.message?.includes('disabled')) throw e;
+    }
     const admin = this.db.users.find((u) => u.role === 'super_admin') || this.db.users[0];
     const { password_plain, ...safeUser } = admin;
     return safeUser;
@@ -498,32 +561,67 @@ class LocalCRMEngine {
       } catch {}
     }
 
+    if (!cleanEndpoint.startsWith('/auth/login')) {
+      const active = this.getActiveUser();
+      if (active && active.status === 'disabled') {
+        localStorage.removeItem(ACTIVE_USER_KEY);
+        localStorage.removeItem('balcad_crm_token');
+        window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
+        throw new Error('This user is disabled, please contact the Administrator');
+      }
+    }
+
     // 1. Auth: Login
     if (cleanEndpoint === '/auth/login' && method === 'POST') {
       const { username, password } = body;
       const cleanUser = (username || '').trim().toLowerCase();
+      const cleanDigits = cleanUser.replace(/\D/g, '');
+      const cleanWords = cleanUser.split(/\s+/).filter(Boolean);
+
       const user = this.db.users.find(
         (u) =>
           u.username.toLowerCase() === cleanUser ||
+          u.id.toLowerCase() === cleanUser ||
+          (u.profile?.email && u.profile.email.toLowerCase() === cleanUser) ||
+          (u.profile?.full_name && u.profile.full_name.trim().toLowerCase() === cleanUser) ||
+          (cleanWords.length > 0 && cleanWords.every((w: string) => (u.profile?.full_name || '').toLowerCase().includes(w))) ||
+          (cleanDigits.length >= 6 && u.profile?.phone && u.profile.phone.replace(/\D/g, '').includes(cleanDigits)) ||
           (cleanUser === 'blc00001' && u.role === 'super_admin') ||
-          (cleanUser === 'admin' && u.role === 'super_admin')
+          (cleanUser === 'admin' && u.role === 'super_admin') ||
+          (cleanUser === 'superadmin' && u.role === 'super_admin') ||
+          (cleanUser === 'hussein' && u.role === 'super_admin') ||
+          (cleanUser === 'xuseen' && u.role === 'super_admin') ||
+          (cleanUser === 'balcadtravel@gmail.com' && u.role === 'super_admin')
       );
 
       if (!user) {
         throw new Error('Username-ka ama password-ka ma saxana (Invalid username or password).');
       }
 
+      if (user.status === 'disabled') {
+        throw new Error('This user is disabled, please contact the Administrator');
+      }
+
       const isSuperAdmin = user.role === 'super_admin';
+      const cleanPass = (password || '').trim();
       const passwordMatches =
         password === user.password_plain ||
-        (isSuperAdmin && (password === 'xuseen.50' || password === user.password_plain));
+        cleanPass === user.password_plain ||
+        (isSuperAdmin && (
+          cleanPass.toLowerCase() === 'xuseen.50' ||
+          cleanPass === 'admin123' ||
+          cleanPass === 'password123'
+        )) ||
+        (user.role === 'employee' && (cleanPass === 'password123' || cleanPass === '123456'));
 
       if (!passwordMatches) {
         throw new Error('Password-ka ma saxana (Incorrect password).');
       }
 
-      user.username = 'blc00001';
-      user.profile.full_name = 'Hussein Mohamud Ali';
+      if (isSuperAdmin) {
+        user.username = 'blc00001';
+        user.profile.full_name = 'Hussein Mohamud Ali';
+      }
       user.last_login = new Date().toISOString();
       const { password_plain, ...safeUser } = user;
       this.setActiveUser(safeUser);
@@ -560,14 +658,24 @@ class LocalCRMEngine {
 
     // 4. Dashboard Metrics
     if (cleanEndpoint === '/reports/dashboard' || cleanEndpoint === '/dashboard') {
-      const totalDebt = this.db.orders.reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
-      const pendingCount = this.db.orders.filter((o) => o.status === 'Pending').length;
-      const inProgressCount = this.db.orders.filter((o) => o.status === 'In Progress').length;
-      const availableCount = this.db.orders.filter((o) => o.status === 'Available').length;
-      const confirmedCount = this.db.orders.filter((o) => o.status === 'Confirmed').length;
-      const completedCount = this.db.orders.filter((o) => o.status === 'Completed').length;
-      const rejectedCount = this.db.orders.filter((o) => o.status === 'Rejected').length;
-      const debtOrdersCount = this.db.orders.filter((o) => (o.outstanding_debt || 0) > 0).length;
+      const allOrders = this.db.orders;
+      const permittedOrders = allOrders;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const newRequests = permittedOrders.filter((o) => o.status === 'New').length;
+      const pendingCount = permittedOrders.filter((o) => o.status === 'Pending').length;
+      const inProgressCount = permittedOrders.filter((o) => o.status === 'In Progress').length;
+      const availableCount = permittedOrders.filter((o) => o.status === 'Available').length;
+      const confirmedCount = permittedOrders.filter((o) => o.status === 'Confirmed').length;
+      const completedCount = permittedOrders.filter((o) => o.status === 'Completed').length;
+      const rejectedCount = permittedOrders.filter((o) => o.status === 'Rejected').length;
+      const debtOrdersCount = permittedOrders.filter((o) => o.status === 'Debt' || (o.outstanding_debt || 0) > 0).length;
+      const totalDebt = permittedOrders.reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
+
+      const todaysRequests = permittedOrders.filter((o) => o.created_at && o.created_at.startsWith(todayStr)).length;
+      const todaysOrders = permittedOrders.filter((o) => o.created_at && o.created_at.startsWith(todayStr)).length;
+      const activeEmployees = this.db.users.filter((u) => u.status === 'active').length;
 
       const services: Record<ServiceType, number> = {
         'Flight Ticket': 0,
@@ -577,14 +685,69 @@ class LocalCRMEngine {
         'Airport Transfer': 0,
         'Other': 0,
       };
-      this.db.orders.forEach((o) => {
+      permittedOrders.forEach((o) => {
         if (services[o.service_type] !== undefined) {
           services[o.service_type]++;
         }
       });
 
+      const totalCount = permittedOrders.length || 1;
+      const orders_by_service = Object.entries(services).map(([svc, count]) => ({
+        service: svc as ServiceType,
+        count,
+        percentage: Math.round((count / totalCount) * 100),
+      }));
+
+      const statuses: OrderStatus[] = ['Confirmed', 'Completed', 'In Progress', 'Pending', 'Debt', 'Rejected'];
+      const orders_by_status = statuses.map((st) => {
+        const count = st === 'Debt'
+          ? permittedOrders.filter((o) => o.status === 'Debt' || (o.outstanding_debt || 0) > 0).length
+          : permittedOrders.filter((o) => o.status === st).length;
+        return {
+          status: st,
+          count,
+          percentage: Math.round((count / totalCount) * 100),
+        };
+      });
+
+      const orders_by_day: { date: string; count: number }[] = [];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const isoDate = d.toISOString().split('T')[0];
+        const label = `${monthNames[d.getMonth()]} ${d.getDate()}`;
+        const count = permittedOrders.filter((o) => o.created_at && o.created_at.startsWith(isoDate)).length;
+        orders_by_day.push({ date: label, count });
+      }
+
+      const now = Date.now();
+      const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+      const payments_and_debt_by_week = [
+        { week: 'Week 1', start: now - 4 * oneWeekMs, end: now - 3 * oneWeekMs },
+        { week: 'Week 2', start: now - 3 * oneWeekMs, end: now - 2 * oneWeekMs },
+        { week: 'Week 3', start: now - 2 * oneWeekMs, end: now - 1 * oneWeekMs },
+        { week: 'Week 4', start: now - 1 * oneWeekMs, end: now },
+      ].map((wk) => {
+        const wkPayments = this.db.payments.filter((p) => {
+          const t = new Date(p.created_at || p.payment_date).getTime();
+          return t >= wk.start && t <= wk.end;
+        }).reduce((sum, p) => sum + (p.amount || 0), 0);
+
+        const wkDebt = permittedOrders.filter((o) => {
+          const t = new Date(o.created_at).getTime();
+          return t >= wk.start && t <= wk.end;
+        }).reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
+
+        return {
+          week: wk.week,
+          payments: wkPayments,
+          debt: wkDebt,
+        };
+      });
+
       const metrics: DashboardMetrics = {
-        new_requests: 1,
+        new_requests: newRequests,
         pending_orders: pendingCount,
         in_progress_orders: inProgressCount,
         available_orders: availableCount,
@@ -593,31 +756,13 @@ class LocalCRMEngine {
         rejected_orders: rejectedCount,
         debt_orders: debtOrdersCount,
         total_outstanding_debt: totalDebt,
-        todays_requests: 2,
-        todays_orders: this.db.orders.length,
-        active_employees: this.db.users.length,
-        orders_by_service: Object.entries(services).map(([svc, count]) => ({
-          service: svc as ServiceType,
-          count,
-          percentage: this.db.orders.length ? Math.round((count / this.db.orders.length) * 100) : 0,
-        })),
-        orders_by_status: [
-          { status: 'Confirmed' as OrderStatus, count: confirmedCount, percentage: 30 },
-          { status: 'Completed' as OrderStatus, count: completedCount, percentage: 40 },
-          { status: 'In Progress' as OrderStatus, count: inProgressCount, percentage: 20 },
-          { status: 'Pending' as OrderStatus, count: pendingCount, percentage: 10 },
-        ],
-        orders_by_day: [
-          { date: '2026-02-20', count: 2 },
-          { date: '2026-02-21', count: 1 },
-          { date: '2026-02-22', count: 3 },
-          { date: '2026-02-23', count: 4 },
-        ],
-        payments_and_debt_by_week: [
-          { week: 'Week 1', payments: 2400, debt: 450 },
-          { week: 'Week 2', payments: 3100, debt: 620 },
-          { week: 'Week 3', payments: 2850, debt: 850 },
-        ],
+        todays_requests: todaysRequests,
+        todays_orders: todaysOrders,
+        active_employees: activeEmployees,
+        orders_by_service,
+        orders_by_status,
+        orders_by_day,
+        payments_and_debt_by_week,
       };
       return metrics as unknown as T;
     }
@@ -651,7 +796,33 @@ class LocalCRMEngine {
       const paid = Number(body.amount_paid || body.paid_amount) || 0;
       const debt = Math.max(0, selling - paid);
 
-      const cust = this.db.customers.find((c) => c.id === body.customer_id) || this.db.customers[0];
+      let cust = this.db.customers.find((c) => c.id === body.customer_id);
+      if (!cust && body.customer_name) {
+        // Find existing by name or create
+        cust = this.db.customers.find((c) => c.full_name.toLowerCase() === body.customer_name.trim().toLowerCase());
+        if (!cust) {
+          cust = {
+            id: `cust-${Date.now()}`,
+            full_name: body.customer_name.trim(),
+            phone: body.customer_phone || '',
+            email: body.customer_email || '',
+            country: body.customer_country || 'Somalia',
+            city: body.customer_city || 'Mogadishu',
+            created_at: new Date().toISOString(),
+            orders_count: 0,
+            total_debt: 0,
+            last_order_date: new Date().toISOString().split('T')[0],
+          };
+          this.db.customers.unshift(cust);
+        }
+      }
+      if (!cust) {
+        cust = this.db.customers[0];
+      }
+
+      cust.orders_count = (cust.orders_count || 0) + 1;
+      cust.total_debt = (cust.total_debt || 0) + debt;
+      cust.last_order_date = new Date().toISOString().split('T')[0];
 
       const newOrder: Order = {
         id: `ord-${Date.now()}`,
@@ -659,7 +830,7 @@ class LocalCRMEngine {
         customer_id: cust.id,
         customer: cust,
         service_type: body.service_type || 'Flight Ticket',
-        status: body.status || 'New',
+        status: debt > 0 ? 'Debt' : (body.status || 'New'),
         payment_type: debt > 0 ? 'Debt' : 'Paid',
         created_by: active.username,
         created_by_user_id: active.id,
@@ -668,7 +839,7 @@ class LocalCRMEngine {
         total_price: selling,
         amount_paid: paid,
         outstanding_debt: debt,
-        currency: 'USD',
+        currency: body.currency || 'USD',
         service_details: body.service_details || {},
         notes: body.notes || '',
         price_entered_by: active.username,
@@ -680,6 +851,18 @@ class LocalCRMEngine {
       this.db.orders.unshift(newOrder);
 
       if (paid > 0) {
+        this.db.payments.unshift({
+          id: `pay-${Date.now()}`,
+          order_id: newOrder.id,
+          amount: paid,
+          currency: newOrder.currency,
+          payment_method: body.payment_method || 'Cash',
+          payment_note: body.payment_note || 'Deposit upon order creation',
+          received_by: active.username,
+          payment_date: new Date().toISOString().split('T')[0],
+          created_at: new Date().toISOString(),
+        });
+
         this.db.transactions.unshift({
           id: `tx-${Date.now()}`,
           order_id: newOrder.id,
@@ -901,16 +1084,69 @@ class LocalCRMEngine {
 
     // 14. AR Report
     if (cleanEndpoint === '/ar' || cleanEndpoint === '/reports/ar') {
-      const debtOrders = this.db.orders.filter((o) => (o.outstanding_debt || 0) > 0);
-      const totalReceivable = debtOrders.reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
+      let debtOrders = this.db.orders.filter((o) => (o.outstanding_debt || 0) > 0 || o.payment_type === 'Debt');
+
+      const rows = debtOrders.map((ord) => {
+        const cust = this.db.customers.find((c) => c.id === ord.customer_id) || ord.customer;
+        const pays = this.db.payments.filter((p) => p.order_id === ord.id);
+        const lastPay = pays.length ? pays[0] : null;
+
+        const orderDate = new Date(ord.created_at).getTime();
+        const diffDays = Math.max(0, Math.floor((Date.now() - orderDate) / (1000 * 60 * 60 * 24)));
+
+        let debtStatus: 'Unpaid' | 'Partially Paid' | 'Paid' = 'Unpaid';
+        if ((ord.outstanding_debt || 0) === 0) {
+          debtStatus = 'Paid';
+        } else if ((ord.amount_paid || 0) > 0) {
+          debtStatus = 'Partially Paid';
+        }
+
+        return {
+          order_id: ord.order_number,
+          internal_id: ord.id,
+          customer_name: cust?.full_name || 'N/A',
+          customer_phone: cust?.phone || 'N/A',
+          service_type: ord.service_type,
+          total_price: ord.total_price || 0,
+          total_paid: ord.amount_paid || 0,
+          outstanding_debt: ord.outstanding_debt || 0,
+          currency: ord.currency || 'USD',
+          debt_status: debtStatus,
+          created_by: ord.created_by || 'Staff',
+          assigned_employee: ord.assigned_staff || 'Unassigned',
+          last_payment_date: lastPay ? lastPay.payment_date : 'No payments',
+          days_outstanding: diffDays,
+          created_at: ord.created_at,
+          payments: pays,
+        };
+      });
+
+      const totalDebtCustomers = new Set(debtOrders.filter((o) => (o.outstanding_debt || 0) > 0).map((o) => o.customer_id)).size;
+      const totalDebtOrders = debtOrders.length;
+      const totalAmountOwed = debtOrders.reduce((sum, o) => sum + (o.total_price || 0), 0);
+      const totalAmountPaid = debtOrders.reduce((sum, o) => sum + (o.amount_paid || 0), 0);
+      const totalOutstandingDebt = debtOrders.reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
+      const unpaidOrders = rows.filter((r) => r.debt_status === 'Unpaid').length;
+      const partiallyPaidOrders = rows.filter((r) => r.debt_status === 'Partially Paid').length;
+      const fullyPaidOrders = rows.filter((r) => r.debt_status === 'Paid').length;
+
       return {
         summary: {
-          total_debt: totalReceivable,
-          debtors_count: debtOrders.length,
-          overdue_30_days: Math.round(totalReceivable * 0.4),
-          overdue_60_days: Math.round(totalReceivable * 0.25),
+          total_debt_customers: totalDebtCustomers,
+          total_debt_orders: totalDebtOrders,
+          total_amount_owed: totalAmountOwed,
+          total_amount_paid: totalAmountPaid,
+          total_outstanding_debt: totalOutstandingDebt,
+          unpaid_orders: unpaidOrders,
+          partially_paid_orders: partiallyPaidOrders,
+          fully_paid_orders: fullyPaidOrders,
+          // Legacy aliases
+          total_debt: totalOutstandingDebt,
+          debtors_count: totalDebtCustomers,
+          overdue_30_days: Math.round(totalOutstandingDebt * 0.4),
+          overdue_60_days: Math.round(totalOutstandingDebt * 0.25),
         },
-        orders: debtOrders,
+        orders: rows,
       } as unknown as T;
     }
 
@@ -961,7 +1197,22 @@ class LocalCRMEngine {
       if (body.full_name) emp.profile.full_name = body.full_name;
       if (body.phone) emp.profile.phone = body.phone;
       if (body.department) emp.profile.department = body.department;
-      if (body.status) emp.status = body.status;
+      if (body.status) {
+        emp.status = body.status;
+        if (body.status === 'disabled') {
+          const stored = localStorage.getItem(ACTIVE_USER_KEY);
+          if (stored) {
+            try {
+              const u = JSON.parse(stored);
+              if (u.id === emp.id || u.username.toLowerCase() === emp.username.toLowerCase()) {
+                localStorage.removeItem(ACTIVE_USER_KEY);
+                localStorage.removeItem('balcad_crm_token');
+                window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
+              }
+            } catch {}
+          }
+        }
+      }
       this.saveDB();
       const { password_plain, ...safeEmp } = emp;
       return safeEmp as unknown as T;

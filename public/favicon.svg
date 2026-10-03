@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#141824"/>
+      <stop offset="70%" stop-color="#090b10"/>
+      <stop offset="100%" stop-color="#050608"/>
+    </radialGradient>
+
+    <!-- Gold Gradients for Rings and Typography -->
+    <linearGradient id="goldOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fdf3cd"/>
+      <stop offset="25%" stop-color="#d4af37"/>
+      <stop offset="50%" stop-color="#aa7c11"/>
+      <stop offset="75%" stop-color="#e6ca65"/>
+      <stop offset="100%" stop-color="#996515"/>
+    </linearGradient>
+
+    <linearGradient id="goldInner" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#faecc1"/>
+      <stop offset="30%" stop-color="#e5c158"/>
+      <stop offset="70%" stop-color="#a67c1e"/>
+      <stop offset="100%" stop-color="#dfbc5a"/>
+    </linearGradient>
+
+    <linearGradient id="goldText" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#fff6d6"/>
+      <stop offset="25%" stop-color="#f5d77f"/>
+      <stop offset="50%" stop-color="#caa038"/>
+      <stop offset="75%" stop-color="#dfba5b"/>
+      <stop offset="100%" stop-color="#9a6e1a"/>
+    </linearGradient>
+
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="3" dy="6" stdDeviation="4" flood-color="#000000" flood-opacity="0.7"/>
+    </filter>
+  </defs>
+
+  <!-- Circular Dark Badge Background -->
+  <circle cx="256" cy="256" r="256" fill="url(#bgGrad)" />
+
+  <!-- Outer Thick Gold Ring -->
+  <circle cx="256" cy="256" r="218" fill="none" stroke="url(#goldOuter)" stroke-width="12" filter="url(#subtleShadow)" />
+  <circle cx="256" cy="256" r="212" fill="none" stroke="#fff9d6" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Inner Concentric Gold Ring -->
+  <circle cx="256" cy="256" r="192" fill="none" stroke="url(#goldInner)" stroke-width="6" />
+
+  <!-- Center 'bt' Monogram in Luxury Italic Serif -->
+  <g filter="url(#subtleShadow)">
+    <text x="250" y="328" 
+          font-family="'Playfair Display', 'Baskerville', 'Georgia', 'Times New Roman', serif" 
+          font-size="210" 
+          font-style="italic" 
+          font-weight="700" 
+          letter-spacing="-12" 
+          fill="url(#goldText)" 
+          text-anchor="middle">
+      bt
+    </text>
+  </g>
+</svg>

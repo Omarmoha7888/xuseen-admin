@@ -1223,8 +1223,63 @@ class DatabaseManager {
   }
 
   // Users & Auth
-  findUserByUsername(username: string) {
-    return this.db.users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+  findUserByUsername(identifier: string) {
+    const clean = (identifier || '').trim().toLowerCase();
+    if (!clean) return null;
+
+    // 1. Direct username match
+    const exact = this.db.users.find((u) => u.username.toLowerCase() === clean);
+    if (exact) return exact;
+
+    // 2. Email match
+    const byEmail = this.db.users.find(
+      (u) => u.profile?.email && u.profile.email.toLowerCase() === clean
+    );
+    if (byEmail) return byEmail;
+
+    // 3. User ID match
+    const byId = this.db.users.find((u) => u.id.toLowerCase() === clean);
+    if (byId) return byId;
+
+    // 4. Exact Full Name match
+    const byFullName = this.db.users.find(
+      (u) => u.profile?.full_name && u.profile.full_name.trim().toLowerCase() === clean
+    );
+    if (byFullName) return byFullName;
+
+    // 5. Full name parts match (e.g. "cumar", "taakuur", "cumar taakuur")
+    const cleanWords = clean.split(/\s+/).filter(Boolean);
+    if (cleanWords.length > 0) {
+      const byNamePart = this.db.users.find((u) => {
+        const fn = (u.profile?.full_name || '').toLowerCase();
+        return cleanWords.every((w) => fn.includes(w)) || (cleanWords.length === 1 && cleanWords[0].length >= 3 && fn.includes(cleanWords[0]));
+      });
+      if (byNamePart) return byNamePart;
+    }
+
+    // 6. Super Admin aliases
+    if (
+      clean === 'admin' ||
+      clean === 'superadmin' ||
+      clean === 'blc00001' ||
+      clean === 'hussein' ||
+      clean === 'xuseen' ||
+      clean === 'balcadtravel@gmail.com'
+    ) {
+      const admin = this.db.users.find((u) => u.role === 'super_admin');
+      if (admin) return admin;
+    }
+
+    // 7. Phone number match
+    const cleanDigits = clean.replace(/\D/g, '');
+    if (cleanDigits.length >= 6) {
+      const byPhone = this.db.users.find(
+        (u) => u.profile?.phone && u.profile.phone.replace(/\D/g, '').includes(cleanDigits)
+      );
+      if (byPhone) return byPhone;
+    }
+
+    return null;
   }
 
   findUserById(id: string) {
@@ -1379,12 +1434,7 @@ class DatabaseManager {
       documents: this.db.documents.filter((d) => d.order_id === ord.id),
     }));
 
-    // Permissions: Employee sees only their permitted orders or assigned orders
-    if (user.role !== 'super_admin') {
-      list = list.filter(
-        (o) => o.created_by === user.username || o.assigned_staff === user.username
-      );
-    }
+    // All authenticated users can view all orders across the agency
 
     if (filters?.status) {
       list = list.filter((o) => o.status.toLowerCase() === filters.status.toLowerCase());
@@ -1425,6 +1475,11 @@ class DatabaseManager {
 
     // If customer doesn't exist, create or link
     let customerId = data.customer_id;
+    const totalPrice = Number(data.total_price) || 0;
+    const initialPaid = Number(data.amount_paid) || 0;
+    const isDebt = data.payment_type === 'Debt' || initialPaid < totalPrice;
+    const outstanding = Math.max(0, totalPrice - initialPaid);
+
     if (!customerId && data.customer_name) {
       customerId = `cust-${Date.now()}`;
       const newCust: Customer = {
@@ -1436,16 +1491,18 @@ class DatabaseManager {
         city: data.customer_city || 'Mogadishu',
         created_at: new Date().toISOString(),
         orders_count: 1,
-        total_debt: 0,
+        total_debt: outstanding,
         last_order_date: new Date().toISOString().split('T')[0],
       };
       this.db.customers.push(newCust);
+    } else if (customerId) {
+      const existingCust = this.db.customers.find((c) => c.id === customerId);
+      if (existingCust) {
+        existingCust.orders_count = (existingCust.orders_count || 0) + 1;
+        existingCust.total_debt = (existingCust.total_debt || 0) + outstanding;
+        existingCust.last_order_date = new Date().toISOString().split('T')[0];
+      }
     }
-
-    const totalPrice = Number(data.total_price) || 0;
-    const initialPaid = Number(data.amount_paid) || 0;
-    const isDebt = data.payment_type === 'Debt' || initialPaid < totalPrice;
-    const outstanding = Math.max(0, totalPrice - initialPaid);
 
     // Automatic debt rule: If payment type is Debt, automatically set status to Debt
     const initialStatus = isDebt ? 'Debt' : (data.status || 'New');
@@ -1568,6 +1625,7 @@ class DatabaseManager {
       related_record_id: newOrder.order_number,
     });
 
+    this.saveToDisk();
     return this.getOrderById(orderId);
   }
 
@@ -1845,9 +1903,7 @@ class DatabaseManager {
   getARReport(user: User, filters?: any) {
     let debtOrders = this.db.orders.filter((o) => o.outstanding_debt > 0 || o.payment_type === 'Debt');
 
-    if (user.role !== 'super_admin') {
-      debtOrders = debtOrders.filter((o) => o.created_by === user.username || o.assigned_staff === user.username);
-    }
+    // All authenticated users can view all debt orders across the agency
 
     const rows = debtOrders.map((ord) => {
       const cust = this.db.customers.find((c) => c.id === ord.customer_id);
@@ -1975,7 +2031,7 @@ class DatabaseManager {
     const targetUser = this.db.users.find((u) => u.id === targetUserId);
     if (!targetUser) throw new Error('Target user not found');
     if (targetUser.status === 'disabled' && user.role !== 'super_admin') {
-      throw new Error('This user is disabled.');
+      throw new Error('This user is disabled, please contact the Administrator');
     }
 
     // Check if direct conversation already exists
@@ -2154,10 +2210,7 @@ class DatabaseManager {
   // Dashboard Metrics
   getDashboardMetrics(user: User) {
     const allOrders = this.db.orders;
-    const permittedOrders =
-      user.role === 'super_admin'
-        ? allOrders
-        : allOrders.filter((o) => o.created_by === user.username || o.assigned_staff === user.username);
+    const permittedOrders = allOrders;
 
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -2198,23 +2251,43 @@ class DatabaseManager {
       percentage: Math.round((count / totalCount) * 100),
     }));
 
-    // Orders by day (last 7 days)
-    const orders_by_day = [
-      { date: 'Apr 20', count: 5 },
-      { date: 'Apr 21', count: 8 },
-      { date: 'Apr 22', count: 8 },
-      { date: 'Apr 23', count: 12 },
-      { date: 'Apr 24', count: 10 },
-      { date: 'Apr 25', count: 14 },
-      { date: 'Apr 26', count: 11 },
-    ];
+    // Dynamic Orders by day (last 7 calendar days)
+    const orders_by_day: { date: string; count: number }[] = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const isoDate = d.toISOString().split('T')[0];
+      const label = `${monthNames[d.getMonth()]} ${d.getDate()}`;
+      const count = permittedOrders.filter((o) => o.created_at && o.created_at.startsWith(isoDate)).length;
+      orders_by_day.push({ date: label, count });
+    }
 
+    // Dynamic Payments & Debt by week (last 4 weeks)
+    const now = Date.now();
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
     const payments_and_debt_by_week = [
-      { week: 'Week 1', payments: 4500, debt: 3200 },
-      { week: 'Week 2', payments: 5800, debt: 4100 },
-      { week: 'Week 3', payments: 6400, debt: 2850 },
-      { week: 'Week 4', payments: 4900, debt: 2850 },
-    ];
+      { week: 'Week 1', start: now - 4 * oneWeekMs, end: now - 3 * oneWeekMs },
+      { week: 'Week 2', start: now - 3 * oneWeekMs, end: now - 2 * oneWeekMs },
+      { week: 'Week 3', start: now - 2 * oneWeekMs, end: now - 1 * oneWeekMs },
+      { week: 'Week 4', start: now - 1 * oneWeekMs, end: now },
+    ].map((wk) => {
+      const wkPayments = this.db.payments.filter((p) => {
+        const t = new Date(p.created_at || p.payment_date).getTime();
+        return t >= wk.start && t <= wk.end;
+      }).reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      const wkDebt = permittedOrders.filter((o) => {
+        const t = new Date(o.created_at).getTime();
+        return t >= wk.start && t <= wk.end;
+      }).reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
+
+      return {
+        week: wk.week,
+        payments: wkPayments,
+        debt: wkDebt,
+      };
+    });
 
     return {
       new_requests: newRequests,
@@ -2226,8 +2299,8 @@ class DatabaseManager {
       rejected_orders: rejected,
       debt_orders: debtOrders,
       total_outstanding_debt: totalOutstandingDebt,
-      todays_requests: todaysRequests || 6,
-      todays_orders: todaysOrders || 9,
+      todays_requests: todaysRequests,
+      todays_orders: todaysOrders,
       active_employees: activeEmployees,
       orders_by_service,
       orders_by_status,

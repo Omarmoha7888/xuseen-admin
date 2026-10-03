@@ -157,6 +157,13 @@ export const EmployeeManagementView: React.FC = () => {
         setConfirmLoading(true);
         try {
           await api.updateEmployee(emp.id, { status: nextStatus });
+          if (nextStatus === 'disabled') {
+            try {
+              const ch = new BroadcastChannel('balcad_auth');
+              ch.postMessage({ type: 'USER_DISABLED', userId: emp.id, username: emp.username });
+              ch.close();
+            } catch {}
+          }
           showToast(`Employee @${emp.username} is now ${nextStatus}.`, 'success');
           await loadEmployees();
         } catch (err: any) {
@@ -180,6 +187,11 @@ export const EmployeeManagementView: React.FC = () => {
         setConfirmLoading(true);
         try {
           await api.deleteEmployee(emp.id);
+          try {
+            const ch = new BroadcastChannel('balcad_auth');
+            ch.postMessage({ type: 'USER_DISABLED', userId: emp.id, username: emp.username });
+            ch.close();
+          } catch {}
           showToast(`Employee @${emp.username} removed.`, 'success');
           await loadEmployees();
         } catch (err: any) {

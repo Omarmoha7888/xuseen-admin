@@ -18,6 +18,7 @@ import { CustomerManagementView } from './components/customers/CustomerManagemen
 import { ReportsView } from './components/reports/ReportsView';
 import { ActivityLogView } from './components/activity/ActivityLogView';
 import { SettingsView } from './components/settings/SettingsView';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const MainLayout: React.FC = () => {
   const { user, loading } = useAuth();
@@ -50,16 +51,18 @@ const MainLayout: React.FC = () => {
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrderId(orderId);
+    setCurrentTab('orders');
   };
 
   const handleBackFromDetail = () => {
     setSelectedOrderId(null);
+    setCurrentTab('orders');
   };
 
   const handleNavigateTab = (tab: string, filter?: string, serviceFilter?: string) => {
     setSelectedOrderId(null);
-    if (filter) setOrdersFilter(filter);
-    if (serviceFilter) setOrdersServiceFilter(serviceFilter);
+    setOrdersFilter(filter || 'All');
+    setOrdersServiceFilter(serviceFilter || 'All');
     setCurrentTab(tab);
     window.scrollTo({ top: 0, behavior: 'instant' as any });
   };
@@ -98,57 +101,62 @@ const MainLayout: React.FC = () => {
         />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {selectedOrderId ? (
-            <OrderDetailView
-              orderId={selectedOrderId}
-              onBack={handleBackFromDetail}
-              onOrderUpdated={() => {}}
-            />
-          ) : currentTab === 'dashboard' ? (
-            <DashboardView
-              onNavigateTab={handleNavigateTab}
-              onSelectOrder={handleSelectOrder}
-            />
-          ) : currentTab === 'new_order' ? (
-            <NewOrderForm
-              onBack={() => setCurrentTab('orders')}
-              onOrderCreated={(newId) => setSelectedOrderId(newId)}
-            />
-          ) : currentTab === 'orders' ? (
-            <OrdersListView
-              onSelectOrder={handleSelectOrder}
-              onNewOrder={() => setCurrentTab('new_order')}
-              initialFilter={ordersFilter}
-              initialServiceFilter={ordersServiceFilter}
-            />
-          ) : currentTab === 'customers' ? (
-            <CustomerManagementView onSelectOrder={handleSelectOrder} />
-          ) : currentTab === 'employees' ? (
-            user.role === 'super_admin' ? (
-              <EmployeeManagementView />
+          <ErrorBoundary>
+            {selectedOrderId ? (
+              <OrderDetailView
+                orderId={selectedOrderId}
+                onBack={handleBackFromDetail}
+                onOrderUpdated={() => {}}
+              />
+            ) : currentTab === 'dashboard' ? (
+              <DashboardView
+                onNavigateTab={handleNavigateTab}
+                onSelectOrder={handleSelectOrder}
+              />
+            ) : currentTab === 'new_order' ? (
+              <NewOrderForm
+                onBack={() => handleNavigateTab('orders')}
+                onOrderCreated={(newId) => {
+                  setSelectedOrderId(newId);
+                  setCurrentTab('orders');
+                }}
+              />
+            ) : currentTab === 'orders' ? (
+              <OrdersListView
+                onSelectOrder={handleSelectOrder}
+                onNewOrder={() => setCurrentTab('new_order')}
+                initialFilter={ordersFilter}
+                initialServiceFilter={ordersServiceFilter}
+              />
+            ) : currentTab === 'customers' ? (
+              <CustomerManagementView onSelectOrder={handleSelectOrder} />
+            ) : currentTab === 'employees' ? (
+              user.role === 'super_admin' ? (
+                <EmployeeManagementView />
+              ) : (
+                <div className="p-8 text-center text-xs text-red-400">
+                  You do not have permission to access Employee Management.
+                </div>
+              )
+            ) : currentTab === 'messages' ? (
+              <InternalMessagingView />
+            ) : currentTab === 'ar_report' ? (
+              <ARReportView onSelectOrder={handleSelectOrder} />
+            ) : currentTab === 'transactions' ? (
+              <RecentTransactionsView />
+            ) : currentTab === 'reports' ? (
+              <ReportsView />
+            ) : currentTab === 'activity' ? (
+              <ActivityLogView />
+            ) : currentTab === 'settings' ? (
+              <SettingsView />
             ) : (
-              <div className="p-8 text-center text-xs text-red-400">
-                You do not have permission to access Employee Management.
-              </div>
-            )
-          ) : currentTab === 'messages' ? (
-            <InternalMessagingView />
-          ) : currentTab === 'ar_report' ? (
-            <ARReportView onSelectOrder={handleSelectOrder} />
-          ) : currentTab === 'transactions' ? (
-            <RecentTransactionsView />
-          ) : currentTab === 'reports' ? (
-            <ReportsView />
-          ) : currentTab === 'activity' ? (
-            <ActivityLogView />
-          ) : currentTab === 'settings' ? (
-            <SettingsView />
-          ) : (
-            <DashboardView
-              onNavigateTab={handleNavigateTab}
-              onSelectOrder={handleSelectOrder}
-            />
-          )}
+              <DashboardView
+                onNavigateTab={handleNavigateTab}
+                onSelectOrder={handleSelectOrder}
+              />
+            )}
+          </ErrorBoundary>
         </main>
 
         {/* Footer */}

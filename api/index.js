@@ -25762,6 +25762,10 @@ var DatabaseManager = class {
     const orderNumber = `BAL-2026-${nextNum}`;
     const orderId = `ord-${Date.now()}`;
     let customerId = data.customer_id;
+    const totalPrice = Number(data.total_price) || 0;
+    const initialPaid = Number(data.amount_paid) || 0;
+    const isDebt = data.payment_type === "Debt" || initialPaid < totalPrice;
+    const outstanding = Math.max(0, totalPrice - initialPaid);
     if (!customerId && data.customer_name) {
       customerId = `cust-${Date.now()}`;
       const newCust = {
@@ -25773,15 +25777,18 @@ var DatabaseManager = class {
         city: data.customer_city || "Mogadishu",
         created_at: (/* @__PURE__ */ new Date()).toISOString(),
         orders_count: 1,
-        total_debt: 0,
+        total_debt: outstanding,
         last_order_date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
       };
       this.db.customers.push(newCust);
+    } else if (customerId) {
+      const existingCust = this.db.customers.find((c) => c.id === customerId);
+      if (existingCust) {
+        existingCust.orders_count = (existingCust.orders_count || 0) + 1;
+        existingCust.total_debt = (existingCust.total_debt || 0) + outstanding;
+        existingCust.last_order_date = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      }
     }
-    const totalPrice = Number(data.total_price) || 0;
-    const initialPaid = Number(data.amount_paid) || 0;
-    const isDebt = data.payment_type === "Debt" || initialPaid < totalPrice;
-    const outstanding = Math.max(0, totalPrice - initialPaid);
     const initialStatus = isDebt ? "Debt" : data.status || "New";
     const newOrder = {
       id: orderId,
@@ -25890,6 +25897,7 @@ var DatabaseManager = class {
       message: `Order ${newOrder.order_number} (${newOrder.service_type}) was created by ${user.username}.`,
       related_record_id: newOrder.order_number
     });
+    this.saveToDisk();
     return this.getOrderById(orderId);
   }
   updateOrderStatus(orderId, newStatus, reason, user) {
@@ -26405,21 +26413,38 @@ var DatabaseManager = class {
       count,
       percentage: Math.round(count / totalCount * 100)
     }));
-    const orders_by_day = [
-      { date: "Apr 20", count: 5 },
-      { date: "Apr 21", count: 8 },
-      { date: "Apr 22", count: 8 },
-      { date: "Apr 23", count: 12 },
-      { date: "Apr 24", count: 10 },
-      { date: "Apr 25", count: 14 },
-      { date: "Apr 26", count: 11 }
-    ];
+    const orders_by_day = [];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    for (let i = 6; i >= 0; i--) {
+      const d = /* @__PURE__ */ new Date();
+      d.setDate(d.getDate() - i);
+      const isoDate = d.toISOString().split("T")[0];
+      const label = `${monthNames[d.getMonth()]} ${d.getDate()}`;
+      const count = permittedOrders.filter((o) => o.created_at && o.created_at.startsWith(isoDate)).length;
+      orders_by_day.push({ date: label, count });
+    }
+    const now = Date.now();
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1e3;
     const payments_and_debt_by_week = [
-      { week: "Week 1", payments: 4500, debt: 3200 },
-      { week: "Week 2", payments: 5800, debt: 4100 },
-      { week: "Week 3", payments: 6400, debt: 2850 },
-      { week: "Week 4", payments: 4900, debt: 2850 }
-    ];
+      { week: "Week 1", start: now - 4 * oneWeekMs, end: now - 3 * oneWeekMs },
+      { week: "Week 2", start: now - 3 * oneWeekMs, end: now - 2 * oneWeekMs },
+      { week: "Week 3", start: now - 2 * oneWeekMs, end: now - 1 * oneWeekMs },
+      { week: "Week 4", start: now - 1 * oneWeekMs, end: now }
+    ].map((wk) => {
+      const wkPayments = this.db.payments.filter((p) => {
+        const t = new Date(p.created_at || p.payment_date).getTime();
+        return t >= wk.start && t <= wk.end;
+      }).reduce((sum, p) => sum + (p.amount || 0), 0);
+      const wkDebt = permittedOrders.filter((o) => {
+        const t = new Date(o.created_at).getTime();
+        return t >= wk.start && t <= wk.end;
+      }).reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
+      return {
+        week: wk.week,
+        payments: wkPayments,
+        debt: wkDebt
+      };
+    });
     return {
       new_requests: newRequests,
       pending_orders: pendingOrders,
@@ -26430,8 +26455,8 @@ var DatabaseManager = class {
       rejected_orders: rejected,
       debt_orders: debtOrders,
       total_outstanding_debt: totalOutstandingDebt,
-      todays_requests: todaysRequests || 6,
-      todays_orders: todaysOrders || 9,
+      todays_requests: todaysRequests,
+      todays_orders: todaysOrders,
       active_employees: activeEmployees,
       orders_by_service,
       orders_by_status,
@@ -26634,6 +26659,7 @@ app.use((req, _res, next) => {
   }
   next();
 });
+app.use(import_express.default.static("public"));
 function authenticateUser(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null;
@@ -26667,7 +26693,7 @@ function authenticateUser(req, res, next) {
   if (user.status === "disabled") {
     sessions.delete(sessionId);
     saveSessionsToDisk();
-    return res.status(403).json({ error: "This user is disabled." });
+    return res.status(401).json({ error: "This user account has been disabled by Administrator. Session revoked.", code: "USER_DISABLED" });
   }
   req.user = user;
   req.sessionId = sessionId;
@@ -26814,6 +26840,14 @@ app.patch("/api/employees/:id", authenticateUser, requireSuperAdmin, (req, res) 
   const admin = req.user;
   try {
     const updated = dbManager.updateEmployee(req.params.id, req.body, admin.username);
+    if (req.body.status === "disabled") {
+      for (const [sId, sess] of sessions.entries()) {
+        if (sess.userId === req.params.id || sess.username.toLowerCase() === updated.username.toLowerCase()) {
+          sessions.delete(sId);
+        }
+      }
+      saveSessionsToDisk();
+    }
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message || "Failed to update employee." });
@@ -26838,6 +26872,12 @@ app.post("/api/employees/:id/change-password", authenticateUser, requireSuperAdm
 app.delete("/api/employees/:id", authenticateUser, requireSuperAdmin, (req, res) => {
   const admin = req.user;
   try {
+    for (const [sId, sess] of sessions.entries()) {
+      if (sess.userId === req.params.id) {
+        sessions.delete(sId);
+      }
+    }
+    saveSessionsToDisk();
     dbManager.deleteEmployee(req.params.id, admin.username);
     res.json({ success: true, message: "Employee removed successfully." });
   } catch (err) {

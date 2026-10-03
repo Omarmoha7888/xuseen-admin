@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Inbox,
   Clock,
@@ -100,6 +100,111 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   };
 
+  // 1. Dynamic Chart 1: Orders by Day (Last 7 Days)
+  const daysData = useMemo(() => {
+    if (metrics?.orders_by_day && metrics.orders_by_day.length > 0) {
+      return metrics.orders_by_day;
+    }
+    const res = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      res.push({ date: `${monthNames[d.getMonth()]} ${d.getDate()}`, count: 0 });
+    }
+    return res;
+  }, [metrics]);
+
+  const maxDayCount = useMemo(() => {
+    const counts = daysData.map((d) => d.count);
+    return Math.max(5, ...counts);
+  }, [daysData]);
+
+  const chartPoints = useMemo(() => {
+    const n = daysData.length;
+    return daysData.map((d, i) => {
+      const x = n > 1 ? 20 + (i / (n - 1)) * 200 : 120;
+      const y = 80 - (d.count / maxDayCount) * 55;
+      return { x, y, count: d.count, date: d.date };
+    });
+  }, [daysData, maxDayCount]);
+
+  // 2. Dynamic Chart 2: Orders by Service
+  const serviceStats = useMemo(() => {
+    const list = metrics?.orders_by_service || [];
+    const total = list.reduce((sum, s) => sum + s.count, 0);
+    const servicesConfig = [
+      { key: 'Flight Ticket', label: 'Flight', color: '#0284c7', dotClass: 'bg-sky-500' },
+      { key: 'Visa Service', label: 'Visa', color: '#2563eb', dotClass: 'bg-blue-600' },
+      { key: 'Hotel', label: 'Hotel', color: '#f59e0b', dotClass: 'bg-amber-500' },
+      { key: 'Travel Package', label: 'Package', color: '#8b5cf6', dotClass: 'bg-purple-500' },
+      { key: 'Airport Transfer', label: 'Transfer', color: '#10b981', dotClass: 'bg-emerald-500' },
+      { key: 'Other', label: 'Other', color: '#64748b', dotClass: 'bg-slate-500' },
+    ];
+    let offset = 0;
+    const items = servicesConfig.map((sc) => {
+      const match = list.find((s) => s.service === sc.key);
+      const count = match ? match.count : 0;
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      const currentOffset = offset;
+      offset += pct;
+      return {
+        ...sc,
+        count,
+        pct,
+        offset: currentOffset,
+      };
+    });
+    return { total, items };
+  }, [metrics]);
+
+  // 3. Dynamic Chart 3: Orders by Status
+  const statusStats = useMemo(() => {
+    const total = metrics
+      ? (metrics.confirmed_orders || 0) +
+        (metrics.completed_orders || 0) +
+        (metrics.in_progress_orders || 0) +
+        (metrics.pending_orders || 0) +
+        (metrics.debt_orders || 0) +
+        (metrics.rejected_orders || 0) +
+        (metrics.new_requests || 0)
+      : 0;
+
+    const statusesConfig = [
+      { key: 'Confirmed', label: 'Confirmed', color: '#10b981', dotClass: 'bg-emerald-500', count: metrics?.confirmed_orders ?? 0 },
+      { key: 'Completed', label: 'Completed', color: '#047857', dotClass: 'bg-emerald-700', count: metrics?.completed_orders ?? 0 },
+      { key: 'In Progress', label: 'In Progress', color: '#3b82f6', dotClass: 'bg-blue-500', count: metrics?.in_progress_orders ?? 0 },
+      { key: 'Pending', label: 'Pending', color: '#f59e0b', dotClass: 'bg-amber-500', count: metrics?.pending_orders ?? 0 },
+      { key: 'Debt', label: 'Debt Orders', color: '#ef4444', dotClass: 'bg-red-500', count: metrics?.debt_orders ?? 0 },
+      { key: 'Rejected', label: 'Rejected', color: '#e11d48', dotClass: 'bg-rose-600', count: metrics?.rejected_orders ?? 0 },
+    ];
+
+    let offset = 0;
+    const items = statusesConfig.map((st) => {
+      const pct = total > 0 ? Math.round((st.count / total) * 100) : 0;
+      const currentOffset = offset;
+      offset += pct;
+      return {
+        ...st,
+        pct,
+        offset: currentOffset,
+      };
+    });
+    return { total, items };
+  }, [metrics]);
+
+  // 4. Dynamic Chart 4: Payments & Debt by Week
+  const weeklyStats = useMemo(() => {
+    const weeks = metrics?.payments_and_debt_by_week || [
+      { week: 'Week 1', payments: 0, debt: 0 },
+      { week: 'Week 2', payments: 0, debt: 0 },
+      { week: 'Week 3', payments: 0, debt: 0 },
+      { week: 'Week 4', payments: 0, debt: 0 },
+    ];
+    const maxVal = Math.max(500, ...weeks.map((w) => Math.max(w.payments, w.debt)));
+    return { weeks, maxVal };
+  }, [metrics]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* 1. Welcome Hero Banner */}
@@ -173,15 +278,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-105 transition">
               <Inbox className="w-5 h-5" />
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 12%
+            <span className="text-[10px] text-blue-400 font-semibold flex items-center gap-0.5">
+              Live
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-blue-300 transition-colors">
             {t('new_requests')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.new_requests : 8}
+            {metrics?.new_requests ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -197,15 +302,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-105 transition">
               <Clock className="w-5 h-5" />
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 8%
+            <span className="text-[10px] text-amber-400 font-semibold flex items-center gap-0.5">
+              Live
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-amber-300 transition-colors">
             {t('pending_orders')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.pending_orders : 5}
+            {metrics?.pending_orders ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -221,15 +326,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-105 transition">
               <Settings className="w-5 h-5" />
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 15%
+            <span className="text-[10px] text-purple-400 font-semibold flex items-center gap-0.5">
+              Live
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-purple-300 transition-colors">
             {t('in_progress')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.in_progress_orders : 7}
+            {metrics?.in_progress_orders ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -245,15 +350,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition">
               <Calendar className="w-5 h-5" />
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 6%
+            <span className="text-[10px] text-indigo-400 font-semibold flex items-center gap-0.5">
+              Live
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-indigo-300 transition-colors">
             {t('available_orders')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.available_orders : 3}
+            {metrics?.available_orders ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -270,14 +375,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 20%
+              Live
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-emerald-300 transition-colors">
             {t('confirmed_orders')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.confirmed_orders : 12}
+            {metrics?.confirmed_orders ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -293,15 +398,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-300 group-hover:scale-105 transition">
               <CheckCheck className="w-5 h-5" />
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 10%
+            <span className="text-[10px] text-teal-400 font-semibold flex items-center gap-0.5">
+              Live
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-teal-300 transition-colors">
             {t('completed_orders')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.completed_orders : 18}
+            {metrics?.completed_orders ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -318,14 +423,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <XCircle className="w-5 h-5" />
             </div>
             <span className="text-[10px] text-red-400 font-semibold flex items-center gap-0.5">
-              <TrendingDown className="w-3 h-3" /> 33%
+              Live
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-red-300 transition-colors">
             {t('rejected_orders')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.rejected_orders : 2}
+            {metrics?.rejected_orders ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -342,19 +447,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <AlertCircle className="w-5 h-5" />
             </div>
             <span className="text-[10px] text-amber-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 25%
+              AR Debt
             </span>
           </div>
           <span className="text-xs text-amber-300 font-medium group-hover:text-amber-200 transition-colors">
             {t('debt_orders')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.debt_orders : 4}
+            {metrics?.debt_orders ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Open AR Report</span>
         </div>
 
-        {/* 9. Total Outstanding Debt ($2,850) */}
+        {/* 9. Total Outstanding Debt */}
         <div
           role="button"
           tabIndex={0}
@@ -366,12 +471,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <DollarSign className="w-5 h-5" />
             </div>
             <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 18%
+              Receivable
             </span>
           </div>
           <span className="text-xs text-amber-300 font-bold">{t('total_outstanding_debt')}</span>
           <div className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-200 mt-0.5 font-mono">
-            ${metrics ? metrics.total_outstanding_debt.toLocaleString() : '2,850'}
+            ${(metrics?.total_outstanding_debt ?? 0).toLocaleString()}
           </div>
           <span className="text-[10px] text-slate-400 mt-1 block">Open AR Report</span>
         </div>
@@ -387,15 +492,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition">
               <UserPlus className="w-5 h-5" />
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 50%
+            <span className="text-[10px] text-cyan-400 font-semibold flex items-center gap-0.5">
+              Today
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-cyan-300 transition-colors">
             {t('todays_requests')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.todays_requests : 6}
+            {metrics?.todays_requests ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -411,15 +516,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center text-sky-400 group-hover:scale-105 transition">
               <ShoppingCart className="w-5 h-5" />
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> 29%
+            <span className="text-[10px] text-sky-400 font-semibold flex items-center gap-0.5">
+              Today
             </span>
           </div>
           <span className="text-xs text-slate-400 font-medium group-hover:text-sky-300 transition-colors">
             {t('todays_orders')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.todays_orders : 9}
+            {metrics?.todays_orders ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">Click to view</span>
         </div>
@@ -447,7 +552,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {t('active_employees')}
           </span>
           <div className="text-xl font-extrabold text-white mt-0.5">
-            {metrics ? metrics.active_employees : 4}
+            {metrics?.active_employees ?? 0}
           </div>
           <span className="text-[10px] text-slate-500 mt-1 block">
             {user?.role === 'super_admin' ? 'Manage Staff' : 'View Team'}
@@ -459,10 +564,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Chart 1: Orders by Day */}
         <div
-          onClick={() => onNavigateTab('reports')}
+          onClick={() => onNavigateTab('orders')}
           className="bg-[#111726] border border-slate-800/80 hover:border-amber-500/30 rounded-2xl p-5 shadow-lg flex flex-col justify-between cursor-pointer transition hover:bg-slate-900/40"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2">
               <Calendar className="w-4 h-4 text-amber-400" />
               <span>{t('orders_by_day')}</span>
@@ -472,32 +577,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
 
-          <div className="h-44 w-full relative flex items-end justify-between pt-6 px-1">
-            <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none p-4" viewBox="0 0 240 100">
-              <polyline
-                fill="none"
-                stroke="#F59E0B"
-                strokeWidth="2.5"
-                points="10,75 45,55 80,55 120,30 160,45 200,20 230,35"
-              />
-              {[
-                { x: 10, y: 75 },
-                { x: 45, y: 55 },
-                { x: 80, y: 55 },
-                { x: 120, y: 30 },
-                { x: 160, y: 45 },
-                { x: 200, y: 20 },
-                { x: 230, y: 35 },
-              ].map((pt, i) => (
-                <circle key={i} cx={pt.x} cy={pt.y} r="3.5" fill="#FBBF24" stroke="#0B0F19" strokeWidth="2" />
+          <div className="h-44 w-full relative flex flex-col justify-end pt-4 px-1">
+            <svg className="w-full h-28 overflow-visible" viewBox="0 0 240 100">
+              {/* Background horizontal grid line */}
+              <line x1="10" y1="80" x2="230" y2="80" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+              <line x1="10" y1="40" x2="230" y2="40" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+
+              {/* Dynamic Polyline */}
+              {chartPoints.length > 1 && (
+                <polyline
+                  fill="none"
+                  stroke="#F59E0B"
+                  strokeWidth="2.5"
+                  points={chartPoints.map((pt) => `${pt.x},${pt.y}`).join(' ')}
+                />
+              )}
+
+              {/* Interactive Data Points */}
+              {chartPoints.map((pt, i) => (
+                <g key={i} className="group/dot cursor-pointer">
+                  <circle
+                    cx={pt.x}
+                    cy={pt.y}
+                    r="4"
+                    fill="#FBBF24"
+                    stroke="#0B0F19"
+                    strokeWidth="2"
+                    className="transition group-hover/dot:scale-150"
+                  />
+                  {pt.count > 0 && (
+                    <text
+                      x={pt.x}
+                      y={pt.y - 8}
+                      textAnchor="middle"
+                      fill="#FDE68A"
+                      fontSize="9"
+                      fontWeight="bold"
+                      className="select-none"
+                    >
+                      {pt.count}
+                    </text>
+                  )}
+                </g>
               ))}
             </svg>
 
-            {['Apr 20', 'Apr 21', 'Apr 22', 'Apr 23', 'Apr 24', 'Apr 25', 'Apr 26'].map((day, i) => (
-              <span key={i} className="text-[9px] text-slate-500 font-mono text-center">
-                {day}
-              </span>
-            ))}
+            {/* Date Labels */}
+            <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono mt-2">
+              {daysData.map((d, i) => (
+                <span key={i} className="truncate text-center" title={`${d.count} orders on ${d.date}`}>
+                  {d.date.split(' ')[1] || d.date}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -511,60 +643,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-4">
             <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0284c7" strokeWidth="4.5" strokeDasharray="35 65" strokeDashoffset="0" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#2563eb" strokeWidth="4.5" strokeDasharray="20 80" strokeDashoffset="-35" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f59e0b" strokeWidth="4.5" strokeDasharray="15 85" strokeDashoffset="-55" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#8b5cf6" strokeWidth="4.5" strokeDasharray="15 85" strokeDashoffset="-70" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#10b981" strokeWidth="4.5" strokeDasharray="10 90" strokeDashoffset="-85" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#64748b" strokeWidth="4.5" strokeDasharray="5 95" strokeDashoffset="-95" />
+                {serviceStats.total === 0 ? (
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#1E293B" strokeWidth="4.5" />
+                ) : (
+                  serviceStats.items.map((item, idx) => (
+                    item.pct > 0 ? (
+                      <circle
+                        key={idx}
+                        cx="18"
+                        cy="18"
+                        r="15.9155"
+                        fill="none"
+                        stroke={item.color}
+                        strokeWidth="4.5"
+                        strokeDasharray={`${item.pct} ${100 - item.pct}`}
+                        strokeDashoffset={-item.offset}
+                        className="transition-all duration-300"
+                      />
+                    ) : null
+                  ))
+                )}
               </svg>
               <div className="absolute flex flex-col items-center">
-                <span className="text-sm font-extrabold text-white">15</span>
+                <span className="text-sm font-extrabold text-white">{serviceStats.total}</span>
                 <span className="text-[8px] text-slate-400">Total</span>
               </div>
             </div>
 
             <div className="space-y-1.5 text-[11px] flex-1">
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', undefined, 'Flight Ticket')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-sky-500" /> Flight</span>
-                <span className="font-bold text-white">35%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', undefined, 'Visa Service')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600" /> Visa</span>
-                <span className="font-bold text-white">20%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', undefined, 'Hotel')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> Hotel</span>
-                <span className="font-bold text-white">15%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', undefined, 'Travel Package')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500" /> Package</span>
-                <span className="font-bold text-white">15%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', undefined, 'Airport Transfer')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Transfer</span>
-                <span className="font-bold text-white">10%</span>
-              </button>
+              {serviceStats.items.map((svc) => (
+                <button
+                  key={svc.key}
+                  type="button"
+                  onClick={() => onNavigateTab('orders', undefined, svc.key)}
+                  className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${svc.dotClass}`} />
+                    <span>{svc.label}</span>
+                  </span>
+                  <span className="font-bold text-white">
+                    {svc.count} ({svc.pct}%)
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -579,60 +701,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-4">
             <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#10b981" strokeWidth="4.5" strokeDasharray="22 78" strokeDashoffset="0" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#059669" strokeWidth="4.5" strokeDasharray="19 81" strokeDashoffset="-22" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#3b82f6" strokeWidth="4.5" strokeDasharray="19 81" strokeDashoffset="-41" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f59e0b" strokeWidth="4.5" strokeDasharray="13 87" strokeDashoffset="-60" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#ef4444" strokeWidth="4.5" strokeDasharray="6 94" strokeDashoffset="-73" />
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#6366f1" strokeWidth="4.5" strokeDasharray="8 92" strokeDashoffset="-79" />
+                {statusStats.total === 0 ? (
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#1E293B" strokeWidth="4.5" />
+                ) : (
+                  statusStats.items.map((item, idx) => (
+                    item.pct > 0 ? (
+                      <circle
+                        key={idx}
+                        cx="18"
+                        cy="18"
+                        r="15.9155"
+                        fill="none"
+                        stroke={item.color}
+                        strokeWidth="4.5"
+                        strokeDasharray={`${item.pct} ${100 - item.pct}`}
+                        strokeDashoffset={-item.offset}
+                        className="transition-all duration-300"
+                      />
+                    ) : null
+                  ))
+                )}
               </svg>
               <div className="absolute flex flex-col items-center">
-                <span className="text-sm font-extrabold text-white">100</span>
+                <span className="text-sm font-extrabold text-white">{statusStats.total}</span>
                 <span className="text-[8px] text-slate-400">Total</span>
               </div>
             </div>
 
             <div className="space-y-1.5 text-[11px] flex-1">
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', 'Confirmed')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Confirmed</span>
-                <span className="font-bold text-white">22%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', 'Completed')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-700" /> Completed</span>
-                <span className="font-bold text-white">19%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', 'In Progress')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> In Progress</span>
-                <span className="font-bold text-white">19%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('orders', 'Pending')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> Pending</span>
-                <span className="font-bold text-white">13%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('ar_report')}
-                className="w-full flex items-center justify-between text-slate-300 hover:text-red-300 p-1 rounded hover:bg-slate-800 transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" /> Debt Orders</span>
-                <span className="font-bold text-red-400">6%</span>
-              </button>
+              {statusStats.items.map((st) => (
+                <button
+                  key={st.key}
+                  type="button"
+                  onClick={() => onNavigateTab(st.key === 'Debt' ? 'ar_report' : 'orders', st.key)}
+                  className="w-full flex items-center justify-between text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${st.dotClass}`} />
+                    <span>{st.label}</span>
+                  </span>
+                  <span className={`font-bold ${st.key === 'Debt' ? 'text-red-400' : 'text-white'}`}>
+                    {st.count} ({st.pct}%)
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -648,7 +760,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span>{t('payments_debt')}</span>
             </h3>
             <span className="text-[11px] px-2 py-0.5 bg-slate-800 text-slate-300 rounded-lg border border-slate-700">
-              This Month
+              4 Weeks
             </span>
           </div>
 
@@ -662,28 +774,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="h-36 flex items-end justify-between gap-3 pt-2">
-            {[
-              { label: 'Week 1', p: 70, d: 50 },
-              { label: 'Week 2', p: 90, d: 65 },
-              { label: 'Week 3', p: 85, d: 45 },
-              { label: 'Week 4', p: 75, d: 40 },
-            ].map((col, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <div className="w-full flex items-end justify-center gap-1 h-28">
-                  <div
-                    style={{ height: `${col.p}%` }}
-                    className="w-3.5 bg-emerald-500 rounded-t-sm hover:opacity-80 transition"
-                    title={`Payments: $${col.p * 70}`}
-                  />
-                  <div
-                    style={{ height: `${col.d}%` }}
-                    className="w-3.5 bg-amber-500 rounded-t-sm hover:opacity-80 transition"
-                    title={`Debt: $${col.d * 50}`}
-                  />
+            {weeklyStats.weeks.map((col, idx) => {
+              const pHeight = Math.min(100, Math.max(8, Math.round((col.payments / weeklyStats.maxVal) * 100)));
+              const dHeight = Math.min(100, Math.max(8, Math.round((col.debt / weeklyStats.maxVal) * 100)));
+
+              return (
+                <div key={idx} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                  <div className="w-full flex items-end justify-center gap-1 h-28">
+                    <div
+                      style={{ height: `${col.payments > 0 ? pHeight : 4}%` }}
+                      className={`w-3.5 ${col.payments > 0 ? 'bg-emerald-500' : 'bg-slate-800'} rounded-t-sm hover:opacity-80 transition`}
+                      title={`Payments: $${col.payments.toLocaleString()}`}
+                    />
+                    <div
+                      style={{ height: `${col.debt > 0 ? dHeight : 4}%` }}
+                      className={`w-3.5 ${col.debt > 0 ? 'bg-amber-500' : 'bg-slate-800'} rounded-t-sm hover:opacity-80 transition`}
+                      title={`Debt: $${col.debt.toLocaleString()}`}
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-500 font-mono">{col.week}</span>
                 </div>
-                <span className="text-[9px] text-slate-500 font-mono">{col.label}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

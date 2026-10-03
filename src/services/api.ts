@@ -68,13 +68,31 @@ async function request<T>(endpoint: string, options: RequestInit = {}, retries =
       const data = await parseResponse(res);
 
       if (!res.ok) {
-        if (res.status === 401) {
+        const errorText = String(data.error || '');
+        const isAuthLoginRoute = endpoint.includes('/auth/login');
+        const isDisabled =
+          data.code === 'USER_DISABLED' ||
+          res.status === 403 ||
+          errorText.toLowerCase().includes('disabled') ||
+          errorText.toLowerCase().includes('revoked');
+
+        if (isDisabled) {
           localStorage.removeItem('balcad_crm_token');
-          window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
-          throw new Error(data.error || 'Unauthorized session');
+          localStorage.removeItem('balcad_crm_active_user');
+          localStorage.removeItem('balcad_crm_active_user_v3');
+          localStorage.setItem('balcad_auth_disabled_msg', 'This user is disabled, please contact the Administrator');
+          window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'This user is disabled, please contact the Administrator' } }));
+          throw new Error('This user is disabled, please contact the Administrator');
         }
 
-        const errorText = String(data.error || '');
+        if (res.status === 401 && !isAuthLoginRoute) {
+          localStorage.removeItem('balcad_crm_token');
+          localStorage.removeItem('balcad_crm_active_user');
+          localStorage.removeItem('balcad_crm_active_user_v3');
+          window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
+          throw new Error(data.error || 'Session expired. Please log in again.');
+        }
+
         const isServerlessOrHostError =
           res.status >= 500 ||
           res.status === 404 ||
@@ -127,6 +145,10 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }, 0);
     localStorage.setItem('balcad_crm_token', data.token);
+    if (data.user) {
+      localStorage.setItem('balcad_crm_active_user', JSON.stringify(data.user));
+      localStorage.setItem('balcad_crm_active_user_v3', JSON.stringify(data.user));
+    }
     return data;
   },
 
@@ -162,6 +184,8 @@ export const api = {
     } finally {
       clearApiCache();
       localStorage.removeItem('balcad_crm_token');
+      localStorage.removeItem('balcad_crm_active_user');
+      localStorage.removeItem('balcad_crm_active_user_v3');
       window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
     }
   },
@@ -224,11 +248,13 @@ export const api = {
   },
 
   // Orders
-  async getOrders(params?: Record<string, string>): Promise<Order[]> {
+  async getOrders(params?: Record<string, string>, bypassCache = false): Promise<Order[]> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     const cacheKey = `orders_${qs}`;
-    const cached = getCached<Order[]>(cacheKey);
-    if (cached) return cached;
+    if (!bypassCache) {
+      const cached = getCached<Order[]>(cacheKey);
+      if (cached) return cached;
+    }
 
     const data = await request<Order[]>(`/orders${qs}`);
     setCached(cacheKey, data, 10000);
@@ -246,15 +272,13 @@ export const api = {
   },
 
   async createOrder(data: any): Promise<Order> {
-    clearApiCache('orders');
-    clearApiCache('reports');
-    clearApiCache('ar');
-    clearApiCache('customers');
-    clearApiCache('transactions');
-    return request<Order>('/orders', {
+    clearApiCache();
+    const result = await request<Order>('/orders', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    clearApiCache();
+    return result;
   },
 
   async updateOrderStatus(id: string, status: string, reason?: string): Promise<Order> {

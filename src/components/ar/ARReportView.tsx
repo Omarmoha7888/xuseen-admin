@@ -61,9 +61,27 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
     setLoading(true);
     try {
       const res = await api.getARReport();
-      setArData(res);
+      const rawOrders = Array.isArray(res?.orders)
+        ? res.orders
+        : Array.isArray((res as any)?.debtOrders)
+        ? (res as any).debtOrders
+        : [];
+
+      const rawSummary = res?.summary || {
+        total_debt_customers: new Set(rawOrders.map((o: any) => o.customer_id || o.customer_name)).size,
+        total_debt_orders: rawOrders.length,
+        total_amount_owed: rawOrders.reduce((sum: number, o: any) => sum + (Number(o.total_price) || 0), 0),
+        total_amount_paid: rawOrders.reduce((sum: number, o: any) => sum + (Number(o.total_paid || o.amount_paid) || 0), 0),
+        total_outstanding_debt: rawOrders.reduce((sum: number, o: any) => sum + (Number(o.outstanding_debt) || 0), 0),
+      };
+
+      setArData({
+        summary: rawSummary,
+        orders: rawOrders,
+      });
     } catch (err) {
       console.warn('Notice loading AR report:', err);
+      setArData({ summary: {}, orders: [] });
     } finally {
       setLoading(false);
     }
@@ -124,26 +142,36 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
     }
   };
 
-  const filteredOrders = arData.orders.filter((ord) => {
+  const filteredOrders = (arData.orders || []).filter((ord) => {
+    if (!ord) return false;
+    const orderId = String(ord.order_id || ord.order_number || '');
+    const custName = String(ord.customer_name || ord.customer?.full_name || '');
+    const custPhone = String(ord.customer_phone || ord.customer?.phone || '');
+    const createdBy = String(ord.created_by || '');
+    const assignedEmp = String(ord.assigned_employee || ord.assigned_staff || '');
+    const svcType = String(ord.service_type || '');
+    const debtStatus = ord.debt_status || (Number(ord.outstanding_debt || 0) > 0 ? (Number(ord.total_paid || ord.amount_paid || 0) > 0 ? 'Partially Paid' : 'Unpaid') : 'Paid');
+    const daysOutstanding = Number(ord.days_outstanding ?? 0);
+
     // Search filter
-    if (search) {
-      const q = search.toLowerCase();
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
       const match =
-        ord.order_id.toLowerCase().includes(q) ||
-        ord.customer_name.toLowerCase().includes(q) ||
-        ord.customer_phone.includes(q) ||
-        ord.created_by.toLowerCase().includes(q) ||
-        ord.assigned_employee.toLowerCase().includes(q) ||
-        ord.service_type.toLowerCase().includes(q);
+        orderId.toLowerCase().includes(q) ||
+        custName.toLowerCase().includes(q) ||
+        custPhone.includes(q) ||
+        createdBy.toLowerCase().includes(q) ||
+        assignedEmp.toLowerCase().includes(q) ||
+        svcType.toLowerCase().includes(q);
       if (!match) return false;
     }
 
     // Quick filter
-    if (statusFilter === 'Unpaid') return ord.debt_status === 'Unpaid';
-    if (statusFilter === 'Partially Paid') return ord.debt_status === 'Partially Paid';
-    if (statusFilter === 'Paid') return ord.debt_status === 'Paid';
-    if (statusFilter === 'Recent') return ord.days_outstanding <= 14;
-    if (statusFilter === 'Older') return ord.days_outstanding > 14;
+    if (statusFilter === 'Unpaid') return debtStatus === 'Unpaid';
+    if (statusFilter === 'Partially Paid') return debtStatus === 'Partially Paid';
+    if (statusFilter === 'Paid') return debtStatus === 'Paid';
+    if (statusFilter === 'Recent') return daysOutstanding <= 14;
+    if (statusFilter === 'Older') return daysOutstanding > 14;
 
     return true;
   });
@@ -324,82 +352,109 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((ord) => (
-                  <tr key={ord.internal_id} className="hover:bg-slate-800/40 transition">
-                    <td
-                      onClick={() => onSelectOrder(ord.internal_id)}
-                      className="py-3 px-3.5 font-mono font-bold text-amber-300 cursor-pointer hover:underline"
-                    >
-                      {ord.order_id}
-                    </td>
-                    <td className="py-3 px-3.5 font-medium text-white">{ord.customer_name}</td>
-                    <td className="py-3 px-3.5 font-mono text-slate-400">{ord.customer_phone}</td>
-                    <td className="py-3 px-3.5 text-slate-400">{ord.service_type}</td>
-                    <td className="py-3 px-3.5 font-mono font-bold text-white">
-                      ${ord.total_price.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-3.5 font-mono text-emerald-400 font-semibold">
-                      ${ord.total_paid.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-3.5 font-mono font-extrabold text-red-400">
-                      ${ord.outstanding_debt.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-3.5">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          ord.debt_status === 'Paid'
-                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                            : ord.debt_status === 'Partially Paid'
-                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                            : 'bg-red-500/15 text-red-400 border-red-500/30'
-                        }`}
+                filteredOrders.map((ord) => {
+                  const internalId = ord.internal_id || ord.id || ord.order_number;
+                  const orderId = ord.order_id || ord.order_number || ord.id;
+                  const custName = ord.customer_name || ord.customer?.full_name || 'N/A';
+                  const custPhone = ord.customer_phone || ord.customer?.phone || 'N/A';
+                  const svc = ord.service_type || 'Travel Service';
+                  const totalPrice = Number(ord.total_price || 0);
+                  const totalPaid = Number(ord.total_paid ?? ord.amount_paid ?? 0);
+                  const debt = Number(ord.outstanding_debt ?? Math.max(0, totalPrice - totalPaid));
+                  const debtStatus = ord.debt_status || (debt === 0 ? 'Paid' : totalPaid > 0 ? 'Partially Paid' : 'Unpaid');
+                  const createdBy = ord.created_by || 'Staff';
+                  const assignedEmp = ord.assigned_employee || ord.assigned_staff || 'Unassigned';
+                  const daysOut = Number(ord.days_outstanding ?? 0);
+
+                  return (
+                    <tr key={internalId} className="hover:bg-slate-800/40 transition">
+                      <td
+                        onClick={() => onSelectOrder(internalId)}
+                        className="py-3 px-3.5 font-mono font-bold text-amber-300 cursor-pointer hover:underline"
                       >
-                        {ord.debt_status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3.5 font-mono text-slate-400">{ord.created_by}</td>
-                    <td className="py-3 px-3.5 font-mono text-slate-300">{ord.assigned_employee}</td>
-                    <td className="py-3 px-3.5 font-mono text-slate-400">{ord.days_outstanding} days</td>
-                    <td className="py-3 px-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => onSelectOrder(ord.internal_id)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition"
+                        {orderId}
+                      </td>
+                      <td className="py-3 px-3.5 font-medium text-white">{custName}</td>
+                      <td className="py-3 px-3.5 font-mono text-slate-400">{custPhone}</td>
+                      <td className="py-3 px-3.5 text-slate-400">{svc}</td>
+                      <td className="py-3 px-3.5 font-mono font-bold text-white">
+                        ${totalPrice.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3.5 font-mono text-emerald-400 font-semibold">
+                        ${totalPaid.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3.5 font-mono font-extrabold text-red-400">
+                        ${debt.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3.5">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            debtStatus === 'Paid'
+                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                              : debtStatus === 'Partially Paid'
+                              ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                              : 'bg-red-500/15 text-red-400 border-red-500/30'
+                          }`}
                         >
-                          {t('view')}
-                        </button>
-
-                        {ord.outstanding_debt > 0 && (
+                          {debtStatus}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3.5 font-mono text-slate-400">{createdBy}</td>
+                      <td className="py-3 px-3.5 font-mono text-slate-300">{assignedEmp}</td>
+                      <td className="py-3 px-3.5 font-mono text-slate-400">{daysOut} days</td>
+                      <td className="py-3 px-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => {
-                              setSelectedOrderForPay(ord);
-                              setPayAmount(ord.outstanding_debt.toString());
-                              setPayError(null);
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold transition flex items-center gap-1"
+                            onClick={() => onSelectOrder(internalId)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition"
                           >
-                            <PlusCircle className="w-3 h-3" />
-                            <span>{t('add_payment')}</span>
+                            {t('view')}
                           </button>
-                        )}
 
-                        {user?.role === 'super_admin' && (
-                          <button
-                            onClick={() => {
-                              setSelectedOrderForAdj(ord);
-                              setAdjAmount('0');
-                              setAdjReason('');
-                            }}
-                            title="Super Admin Financial Adjustment"
-                            className="p-1 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {debt > 0 && (
+                            <button
+                              onClick={() => {
+                                setSelectedOrderForPay({
+                                  ...ord,
+                                  internal_id: internalId,
+                                  order_id: orderId,
+                                  customer_name: custName,
+                                  total_price: totalPrice,
+                                  total_paid: totalPaid,
+                                  outstanding_debt: debt,
+                                });
+                                setPayAmount(debt.toString());
+                                setPayError(null);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold transition flex items-center gap-1"
+                            >
+                              <PlusCircle className="w-3 h-3" />
+                              <span>{t('add_payment')}</span>
+                            </button>
+                          )}
+
+                          {user?.role === 'super_admin' && (
+                            <button
+                              onClick={() => {
+                                setSelectedOrderForAdj({
+                                  ...ord,
+                                  internal_id: internalId,
+                                  order_id: orderId,
+                                });
+                                setAdjAmount('0');
+                                setAdjReason('');
+                              }}
+                              title="Super Admin Financial Adjustment"
+                              className="p-1 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
