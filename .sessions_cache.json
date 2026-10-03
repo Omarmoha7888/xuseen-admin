@@ -189,12 +189,30 @@
     }
   ],
   [
-    "sess_ChIHQ_kovWN7NqawIiu3q8IDfknDfLjLJbecXfk1Wjo_eyJ1c2VySWQiOiJ1c3Itc3RhZmYtMTc5MDk2MDM4NzA1OCIsInVzZXJuYW1lIjoiYmxjMDAwMDIiLCJyb2xlIjoiZW1wbG95ZWUiLCJleHBpcmVzQXQiOjE3OTE2MjQyNDk2NjUsInJuZCI6IjRiZTMxMTEwMjIzZTRjYjMifQ",
+    "sess_fbA538luwiE5eHiqyaO8BFrTocMInk3fcjxDiT8Huq8_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNjQzNTA4Mjc1LCJybmQiOiJmMjdhMjlkZTcxOWVhMzgyIn0",
     {
-      "userId": "usr-staff-1790960387058",
-      "username": "blc00002",
-      "role": "employee",
-      "expiresAt": 1791624249665
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791643508275
+    }
+  ],
+  [
+    "sess_blRxSxjUOpxdA9iIrVgDjaYXaDwsdy11Y2JSZcU8ik0_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNjQzOTQxMDY4LCJybmQiOiI1NTY4NWI5ZjVlZWEwOGRjIn0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791643941068
+    }
+  ],
+  [
+    "sess_O9S41_p7bGAcBYVCCUFGQOplVsn4ANBjONjIMeb3PW8_eyJ1c2VySWQiOiJ1c3ItYWRtaW4tMDEiLCJ1c2VybmFtZSI6ImJsYzAwMDAxIiwicm9sZSI6InN1cGVyX2FkbWluIiwiZXhwaXJlc0F0IjoxNzkxNjQ0MTczMjAzLCJybmQiOiI4N2UyMTljMzlhNzRjMTA1In0",
+    {
+      "userId": "usr-admin-01",
+      "username": "blc00001",
+      "role": "super_admin",
+      "expiresAt": 1791644173203
     }
   ]
 ]

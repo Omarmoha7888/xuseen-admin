@@ -91,7 +91,7 @@ function createInitialLocalDB(): LocalDB {
       id: 'usr-staff-1790960387058',
       username: 'blc00002',
       role: 'employee',
-      status: 'disabled',
+      status: 'active',
       failed_login_attempts: 0,
       created_at: '2026-10-02T16:59:47.169Z',
       last_login: new Date(Date.now() - 3600000).toISOString(),
@@ -472,35 +472,6 @@ class LocalCRMEngine {
             admin.password_plain = 'xuseen.50';
           }
         }
-        // Ensure blc00002 / Cumar Taakuur is synchronized as disabled
-        const cumar = parsed.users?.find(
-          (u: any) =>
-            u.username === 'blc00002' ||
-            u.id === 'usr-staff-1790960387058' ||
-            (u.profile?.email && u.profile.email.toLowerCase() === 'cumartaakuur7888@gmail.com')
-        );
-        if (cumar) {
-          cumar.status = 'disabled';
-        } else if (Array.isArray(parsed.users)) {
-          parsed.users.push({
-            id: 'usr-staff-1790960387058',
-            username: 'blc00002',
-            role: 'employee',
-            status: 'disabled',
-            failed_login_attempts: 0,
-            created_at: '2026-10-02T16:59:47.169Z',
-            last_login: new Date().toISOString(),
-            password_plain: 'password123',
-            profile: {
-              id: 'prof-1790960387169',
-              user_id: 'usr-staff-1790960387058',
-              full_name: 'CUMAR TAAKUUR',
-              phone: '618590999',
-              email: 'cumartaakuur7888@gmail.com',
-              department: 'Finance & Accounts',
-            },
-          });
-        }
         return parsed;
       }
     } catch {}
@@ -527,7 +498,7 @@ class LocalCRMEngine {
           localStorage.removeItem(ACTIVE_USER_KEY);
           localStorage.removeItem('balcad_crm_token');
           window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
-          throw new Error('This user is disabled, please contact the Administrator');
+          throw new Error('dis user is disabled please contact the Super admin');
         }
         if (live) {
           const { password_plain, ...safeLive } = live;
@@ -567,7 +538,7 @@ class LocalCRMEngine {
         localStorage.removeItem(ACTIVE_USER_KEY);
         localStorage.removeItem('balcad_crm_token');
         window.dispatchEvent(new CustomEvent('balcad_auth_expired'));
-        throw new Error('This user is disabled, please contact the Administrator');
+        throw new Error('dis user is disabled please contact the Super admin');
       }
     }
 
@@ -599,7 +570,7 @@ class LocalCRMEngine {
       }
 
       if (user.status === 'disabled') {
-        throw new Error('This user is disabled, please contact the Administrator');
+        throw new Error('dis user is disabled please contact the Super admin');
       }
 
       const isSuperAdmin = user.role === 'super_admin';
@@ -615,8 +586,23 @@ class LocalCRMEngine {
         (user.role === 'employee' && (cleanPass === 'password123' || cleanPass === '123456'));
 
       if (!passwordMatches) {
-        throw new Error('Password-ka ma saxana (Incorrect password).');
+        if (user.role !== 'super_admin') {
+          user.failed_login_attempts = (user.failed_login_attempts || 0) + 1;
+          if (user.failed_login_attempts > 3) {
+            user.status = 'disabled';
+            user.disabled_reason = 'DIS USER IS DISABLED PY WRONG PASSWORD';
+            user.disabled_at = new Date().toISOString();
+            user.disabled_by = 'SYSTEM_WRONG_PASSWORD';
+            this.saveDB();
+            throw new Error('dis user is disabled please contact the Super admin');
+          }
+          this.saveDB();
+        }
+        throw new Error('Username-ka ama password-ka ma saxana (Invalid username or password).');
       }
+
+      // Reset on success
+      user.failed_login_attempts = 0;
 
       if (isSuperAdmin) {
         user.username = 'blc00001';
@@ -1200,6 +1186,9 @@ class LocalCRMEngine {
       if (body.status) {
         emp.status = body.status;
         if (body.status === 'disabled') {
+          emp.disabled_reason = body.disabled_reason || 'Disabled by Administrator';
+          emp.disabled_at = new Date().toISOString();
+          emp.disabled_by = this.getActiveUser()?.username || 'Super Admin';
           const stored = localStorage.getItem(ACTIVE_USER_KEY);
           if (stored) {
             try {
@@ -1211,6 +1200,11 @@ class LocalCRMEngine {
               }
             } catch {}
           }
+        } else if (body.status === 'active') {
+          emp.disabled_reason = null;
+          emp.disabled_at = null;
+          emp.disabled_by = null;
+          emp.failed_login_attempts = 0;
         }
       }
       this.saveDB();

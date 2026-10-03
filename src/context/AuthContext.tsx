@@ -70,27 +70,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       channel = new BroadcastChannel('balcad_auth');
       channel.onmessage = (event) => {
         if (event.data?.type === 'USER_DISABLED') {
-          // Instantly query server to verify active status
+          // Check if notification is targeted to another user
+          const activeUserStr = localStorage.getItem('balcad_crm_active_user_v3') || localStorage.getItem('balcad_crm_active_user');
+          if (activeUserStr && event.data?.userId) {
+            try {
+              const active = JSON.parse(activeUserStr);
+              if (active.id !== event.data.userId && active.username?.toLowerCase() !== event.data?.username?.toLowerCase()) {
+                return; // Not for this user
+              }
+            } catch {}
+          }
+
+          // Query server to verify active status
           api.getMe()
             .then((res) => {
-              if (!res || !res.user || res.user.status === 'disabled') {
-                localStorage.setItem('balcad_auth_disabled_msg', 'This user is disabled, please contact the Administrator');
+              if (res && res.user && res.user.status === 'disabled') {
+                localStorage.setItem('balcad_auth_disabled_msg', 'dis user is disabled please contact the Super admin');
                 localStorage.removeItem('balcad_crm_token');
                 localStorage.removeItem('balcad_crm_active_user');
                 localStorage.removeItem('balcad_crm_active_user_v3');
                 setUser(null);
-                setError('This user is disabled, please contact the Administrator');
-                window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'This user is disabled, please contact the Administrator' } }));
+                setError('dis user is disabled please contact the Super admin');
+                window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'dis user is disabled please contact the Super admin' } }));
               }
             })
             .catch(() => {
-              localStorage.setItem('balcad_auth_disabled_msg', 'This user is disabled, please contact the Administrator');
-              localStorage.removeItem('balcad_crm_token');
-              localStorage.removeItem('balcad_crm_active_user');
-              localStorage.removeItem('balcad_crm_active_user_v3');
-              setUser(null);
-              setError('This user is disabled, please contact the Administrator');
-              window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'This user is disabled, please contact the Administrator' } }));
+              // Ignore network glitches; never boot valid sessions on network errors
             });
         }
       };
@@ -113,29 +118,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const res = await api.getMe();
         if (res && res.user && res.user.status === 'disabled') {
-          localStorage.setItem('balcad_auth_disabled_msg', 'This user is disabled, please contact the Administrator');
+          localStorage.setItem('balcad_auth_disabled_msg', 'dis user is disabled please contact the Super admin');
           localStorage.removeItem('balcad_crm_token');
           localStorage.removeItem('balcad_crm_active_user');
           localStorage.removeItem('balcad_crm_active_user_v3');
           setUser(null);
-          setError('This user is disabled, please contact the Administrator');
-          window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'This user is disabled, please contact the Administrator' } }));
+          setError('dis user is disabled please contact the Super admin');
+          window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'dis user is disabled please contact the Super admin' } }));
         }
       } catch (err: any) {
-        const msg = String(err.message || '').toLowerCase();
-        if (msg.includes('disabled') || msg.includes('revoked')) {
-          localStorage.setItem('balcad_auth_disabled_msg', 'This user is disabled, please contact the Administrator');
+        if (err?.code === 'USER_DISABLED' || String(err?.message || '').toLowerCase().includes('disabled')) {
+          localStorage.setItem('balcad_auth_disabled_msg', 'dis user is disabled please contact the Super admin');
           localStorage.removeItem('balcad_crm_token');
           localStorage.removeItem('balcad_crm_active_user');
           localStorage.removeItem('balcad_crm_active_user_v3');
           setUser(null);
-          setError('This user is disabled, please contact the Administrator');
-          window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'This user is disabled, please contact the Administrator' } }));
+          setError('dis user is disabled please contact the Super admin');
+          window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'dis user is disabled please contact the Super admin' } }));
         }
       }
     };
 
-    const interval = setInterval(checkActiveStatus, 3000);
+    const interval = setInterval(checkActiveStatus, 5000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -146,8 +150,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(res.user);
     } catch (err: any) {
       const msg = String(err.message || '');
-      const finalMsg = (msg.toLowerCase().includes('disabled') || msg.toLowerCase().includes('administrator'))
-        ? 'This user is disabled, please contact the Administrator'
+      const finalMsg = (
+        msg.toLowerCase().includes('disabled') ||
+        msg.toLowerCase().includes('administrator') ||
+        msg.toLowerCase().includes('super admin') ||
+        msg.includes('403') ||
+        msg.toLowerCase().includes('forbidden') ||
+        msg.includes('<html')
+      )
+        ? 'dis user is disabled please contact the Super admin'
         : (err.message || 'Invalid username or password.');
       setError(finalMsg);
       throw new Error(finalMsg);

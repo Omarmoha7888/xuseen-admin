@@ -6,6 +6,9 @@ export interface User {
   username: string;
   role: UserRole;
   status: AccountStatus;
+  disabled_reason?: string | null;
+  disabled_at?: string | null;
+  disabled_by?: string | null;
   failed_login_attempts: number;
   lockout_until?: string | null;
   created_at: string;

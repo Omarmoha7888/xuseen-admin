@@ -8,6 +8,7 @@ import {
   Phone,
   Mail,
   Lock,
+  Unlock,
   Edit,
   Trash2,
   CheckCircle,
@@ -63,7 +64,17 @@ export const EmployeeManagementView: React.FC = () => {
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
 
-  // Confirm Modal (for Enable/Disable or Delete)
+  // Disable Modal State (with mandatory reason)
+  const [disableModalEmp, setDisableModalEmp] = useState<any | null>(null);
+  const [disableReason, setDisableReason] = useState('');
+  const [disableLoading, setDisableLoading] = useState(false);
+  const [disableError, setDisableError] = useState<string | null>(null);
+
+  // Unlock Modal State (shows reason, including "DIS USER IS DISABLED PY WRONG PASSWORD")
+  const [unlockModalEmp, setUnlockModalEmp] = useState<any | null>(null);
+  const [unlockLoading, setUnlockLoading] = useState(false);
+
+  // Confirm Modal (for Delete)
   const [confirmModalData, setConfirmModalData] = useState<{
     isOpen: boolean;
     title: string;
@@ -143,37 +154,67 @@ export const EmployeeManagementView: React.FC = () => {
     }
   };
 
-  const promptToggleStatus = (emp: any) => {
-    const nextStatus = emp.status === 'active' ? 'disabled' : 'active';
-    const actionName = nextStatus === 'disabled' ? 'disable' : 'enable';
+  const handleOpenDisableModal = (emp: any) => {
+    setDisableModalEmp(emp);
+    setDisableReason('');
+    setDisableError(null);
+  };
 
-    setConfirmModalData({
-      isOpen: true,
-      title: `${actionName === 'disable' ? 'Disable' : 'Enable'} Employee Account`,
-      message: `Are you sure you want to ${actionName} employee account @${emp.username}? Disabled users are blocked from logging in.`,
-      confirmText: actionName === 'disable' ? 'Disable User' : 'Enable User',
-      isDestructive: actionName === 'disable',
-      action: async () => {
-        setConfirmLoading(true);
-        try {
-          await api.updateEmployee(emp.id, { status: nextStatus });
-          if (nextStatus === 'disabled') {
-            try {
-              const ch = new BroadcastChannel('balcad_auth');
-              ch.postMessage({ type: 'USER_DISABLED', userId: emp.id, username: emp.username });
-              ch.close();
-            } catch {}
-          }
-          showToast(`Employee @${emp.username} is now ${nextStatus}.`, 'success');
-          await loadEmployees();
-        } catch (err: any) {
-          showToast(err.message || 'Failed to toggle status', 'error');
-        } finally {
-          setConfirmLoading(false);
-          setConfirmModalData((prev) => ({ ...prev, isOpen: false }));
-        }
-      },
-    });
+  const handleOpenUnlockModal = (emp: any) => {
+    setUnlockModalEmp(emp);
+  };
+
+  const handleConfirmDisable = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!disableModalEmp) return;
+    const cleanReason = disableReason.trim();
+    if (!cleanReason) {
+      setDisableError('Fadlan qor faahfaahinta sababta aad u xirayso user-ka (Reason is required).');
+      return;
+    }
+
+    setDisableLoading(true);
+    setDisableError(null);
+    try {
+      await api.updateEmployee(disableModalEmp.id, {
+        status: 'disabled',
+        disabled_reason: cleanReason,
+      });
+
+      try {
+        const ch = new BroadcastChannel('balcad_auth');
+        ch.postMessage({ type: 'USER_DISABLED', userId: disableModalEmp.id, username: disableModalEmp.username });
+        ch.close();
+      } catch {}
+
+      showToast(`User-ka @${disableModalEmp.username} waa la xiray.`, 'success');
+      setDisableModalEmp(null);
+      setDisableReason('');
+      await loadEmployees();
+    } catch (err: any) {
+      setDisableError(err.message || 'Failed to disable employee');
+      showToast(err.message || 'Failed to disable employee', 'error');
+    } finally {
+      setDisableLoading(false);
+    }
+  };
+
+  const handleConfirmUnlock = async () => {
+    if (!unlockModalEmp) return;
+    setUnlockLoading(true);
+    try {
+      await api.updateEmployee(unlockModalEmp.id, {
+        status: 'active',
+      });
+
+      showToast(`User-ka @${unlockModalEmp.username} si guul leh ayaa loo furay.`, 'success');
+      setUnlockModalEmp(null);
+      await loadEmployees();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to unlock employee', 'error');
+    } finally {
+      setUnlockLoading(false);
+    }
   };
 
   const promptRemoveEmployee = (emp: any) => {
@@ -346,6 +387,21 @@ export const EmployeeManagementView: React.FC = () => {
                   </span>
                 </div>
 
+                {/* Reason Disabled Notice on Card */}
+                {isDisabled && (
+                  <div className="my-2.5 p-2.5 rounded-xl bg-red-950/40 border border-red-500/40 flex items-start gap-2">
+                    <Lock className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                    <div className="text-xs flex-1">
+                      <span className="text-[10px] uppercase font-bold text-red-400 block tracking-wider">
+                        Sababta loo xiray (Reason):
+                      </span>
+                      <span className="text-white font-mono font-bold text-[11px] break-words">
+                        {emp.disabled_reason || 'DIS USER IS DISABLED PY WRONG PASSWORD'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Details */}
                 <div className="space-y-1.5 text-xs text-slate-300 py-3 border-y border-slate-800/80">
                   <div className="flex items-center gap-2">
@@ -425,15 +481,25 @@ export const EmployeeManagementView: React.FC = () => {
 
                     <button
                       type="button"
-                      onClick={() => promptToggleStatus(emp)}
-                      title={isDisabled ? t('enable_employee') : t('disable_employee')}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer active:scale-95 duration-75 ${
+                      onClick={() => (isDisabled ? handleOpenUnlockModal(emp) : handleOpenDisableModal(emp))}
+                      title={isDisabled ? 'Fur User-ka (Unlock)' : 'Xir User-ka (Disable)'}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer active:scale-95 duration-75 flex items-center gap-1 ${
                         isDisabled
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30'
+                          : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
                       }`}
                     >
-                      {isDisabled ? 'Enable' : 'Disable'}
+                      {isDisabled ? (
+                        <>
+                          <Unlock className="w-3.5 h-3.5" />
+                          <span>Fur</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>Xir</span>
+                        </>
+                      )}
                     </button>
 
                     <button
@@ -795,6 +861,161 @@ export const EmployeeManagementView: React.FC = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Disable Employee Account (Admin must provide reason) */}
+      {disableModalEmp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-[#121826] border border-red-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-red-400">
+                <Lock className="w-5 h-5" />
+                <h3 className="text-base font-bold text-white">
+                  Xiritaanka User-ka Shaqaalaha
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDisableModalEmp(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmDisable} className="mt-4 space-y-4">
+              <div className="p-3 bg-red-950/20 border border-red-500/30 rounded-xl text-xs text-red-200">
+                Waxaad xiraysaa account-ka shaqaalaha{' '}
+                <strong className="text-white font-mono">
+                  @{disableModalEmp.username}
+                </strong>{' '}
+                ({disableModalEmp.profile?.full_name || disableModalEmp.username}). Marka la xiro, user-kani ma awoodi doono inuu nidaamka galo.
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Faahfaahinta Sababta loo xirayo (Reason for Disabling) <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={disableReason}
+                  onChange={(e) => {
+                    setDisableReason(e.target.value);
+                    if (disableError) setDisableError(null);
+                  }}
+                  placeholder="Fadlan qor faahfaahinta sababta loo xirayo user-ka shaqaalahan..."
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 transition resize-none"
+                />
+                {disableError && (
+                  <p className="text-red-400 text-xs mt-1.5 font-medium">{disableError}</p>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-end gap-3 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setDisableModalEmp(null)}
+                  disabled={disableLoading}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  Ka noqo
+                </button>
+                <button
+                  type="submit"
+                  disabled={disableLoading}
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition active:scale-95 duration-75 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Lock className="w-4 h-4" />
+                  {disableLoading ? 'Fulinaya...' : 'Xir User-ka (Disable)'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Unlock & Enable Employee Account (Shows Reason why it was disabled) */}
+      {unlockModalEmp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-[#121826] border border-emerald-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Unlock className="w-5 h-5" />
+                <h3 className="text-base font-bold text-white">
+                  Furitaanka User-ka Shaqaalaha
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUnlockModalEmp(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4 text-xs">
+              <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <span className="text-slate-400">Shaqaalaha:</span>
+                  <span className="font-bold text-white">
+                    {unlockModalEmp.profile?.full_name || unlockModalEmp.username}
+                  </span>
+                  <span className="font-mono text-amber-300">@{unlockModalEmp.username}</span>
+                </div>
+              </div>
+
+              {/* Faahfaahinta Sababta loo xiray */}
+              <div className="p-4 rounded-xl border bg-red-950/30 border-red-500/40">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="w-4 h-4 text-red-400" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-red-300">
+                    Faahfaahinta / Sababta Loo Xiray (Reason Disabled):
+                  </span>
+                </div>
+                <div className="p-3 bg-black/60 rounded-xl border border-red-500/30 text-white font-mono font-bold text-sm tracking-wide break-words">
+                  {unlockModalEmp.disabled_reason || 'DIS USER IS DISABLED PY WRONG PASSWORD'}
+                </div>
+
+                {unlockModalEmp.disabled_at && (
+                  <p className="text-[11px] text-slate-400 mt-2.5">
+                    Xilliga la xiray: {new Date(unlockModalEmp.disabled_at).toLocaleString()}
+                  </p>
+                )}
+                {unlockModalEmp.disabled_by && (
+                  <p className="text-[11px] text-slate-400">
+                    Cidda xirtay: {unlockModalEmp.disabled_by === 'SYSTEM_WRONG_PASSWORD' ? 'Nidaamka (Wrong password > 3 times)' : unlockModalEmp.disabled_by}
+                  </p>
+                )}
+              </div>
+
+              <div className="p-3 bg-emerald-950/20 border border-emerald-500/30 rounded-xl text-emerald-200">
+                Ma hubtaa inaad rabto inaad furto user-ka shaqaalahan? Gelitaanka nidaamka ayaa dib loogu fasaxi doonaa, waxaana la nadiifin doonaa tirada isku dayada khaldan.
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setUnlockModalEmp(null)}
+                  disabled={unlockLoading}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  Ka noqo
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmUnlock}
+                  disabled={unlockLoading}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition active:scale-95 duration-75 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Unlock className="w-4 h-4" />
+                  {unlockLoading ? 'Fulinaya...' : 'Fur User-ka (Unlock & Activate)'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

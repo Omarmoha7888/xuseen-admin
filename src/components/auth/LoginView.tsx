@@ -18,7 +18,7 @@ export const LoginView: React.FC = () => {
   React.useEffect(() => {
     const disabledMsg = localStorage.getItem('balcad_auth_disabled_msg');
     if (disabledMsg) {
-      setLocalError('This user is disabled, please contact the Administrator');
+      setLocalError('dis user is disabled please contact the Super admin');
       localStorage.removeItem('balcad_auth_disabled_msg');
     }
   }, []);
@@ -43,9 +43,14 @@ export const LoginView: React.FC = () => {
       if (
         msg.toLowerCase().includes('disabled') ||
         msg.toLowerCase().includes('xanniban') ||
-        msg.toLowerCase().includes('administrator')
+        msg.toLowerCase().includes('administrator') ||
+        msg.toLowerCase().includes('super admin') ||
+        msg.includes('403') ||
+        msg.toLowerCase().includes('forbidden') ||
+        msg.includes('<html') ||
+        msg.includes('<!doctype')
       ) {
-        setLocalError('This user is disabled, please contact the Administrator');
+        setLocalError('dis user is disabled please contact the Super admin');
       } else {
         setLocalError(err.message || 'Username-ka ama password-ka ma saxana.');
       }
@@ -59,10 +64,15 @@ export const LoginView: React.FC = () => {
     rawError &&
     (rawError.toLowerCase().includes('disabled') ||
       rawError.toLowerCase().includes('xanniban') ||
-      rawError.toLowerCase().includes('administrator'));
+      rawError.toLowerCase().includes('administrator') ||
+      rawError.toLowerCase().includes('super admin') ||
+      rawError.includes('403') ||
+      rawError.toLowerCase().includes('forbidden') ||
+      rawError.includes('<html') ||
+      rawError.includes('<!doctype'));
 
   const displayedError = isUserDisabledError
-    ? 'This user is disabled, please contact the Administrator'
+    ? 'dis user is disabled please contact the Super admin'
     : rawError;
 
   return (

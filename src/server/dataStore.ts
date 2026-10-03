@@ -1351,7 +1351,14 @@ class DatabaseManager {
 
   updateEmployee(
     id: string,
-    data: { full_name?: string; phone?: string; email?: string; department?: string; status?: 'active' | 'disabled' },
+    data: {
+      full_name?: string;
+      phone?: string;
+      email?: string;
+      department?: string;
+      status?: 'active' | 'disabled';
+      disabled_reason?: string | null;
+    },
     adminUsername: string
   ) {
     const user = this.findUserById(id);
@@ -1360,23 +1367,42 @@ class DatabaseManager {
       throw new Error('Super Admin account cannot be disabled');
     }
 
-    const prev = { ...user.profile, status: user.status };
+    const prev = { ...user.profile, status: user.status, disabled_reason: user.disabled_reason };
     if (data.full_name) user.profile.full_name = data.full_name;
     if (data.phone) user.profile.phone = data.phone;
     if (data.email) user.profile.email = data.email;
     if (data.department) user.profile.department = data.department;
-    if (data.status) user.status = data.status;
+
+    if (data.status) {
+      user.status = data.status;
+      if (data.status === 'disabled') {
+        user.disabled_reason = data.disabled_reason || 'Disabled by Administrator';
+        user.disabled_at = new Date().toISOString();
+        user.disabled_by = adminUsername;
+      } else if (data.status === 'active') {
+        user.disabled_reason = null;
+        user.disabled_at = null;
+        user.disabled_by = null;
+        user.failed_login_attempts = 0;
+      }
+    }
 
     this.logActivity({
       user_id: 'usr-admin-01',
       username: adminUsername,
-      action: 'Employee Updated',
+      action: data.status ? (data.status === 'disabled' ? 'Employee Disabled' : 'Employee Activated') : 'Employee Updated',
       entity_type: 'employee',
       entity_id: user.id,
-      details: `Updated by: ${adminUsername} | Updated employee profile ${user.username}`,
+      details: data.status === 'disabled'
+        ? `Employee ${user.username} disabled by ${adminUsername}. Reason: ${user.disabled_reason}`
+        : data.status === 'active'
+        ? `Employee ${user.username} activated and unlocked by ${adminUsername}`
+        : `Updated by: ${adminUsername} | Updated employee profile ${user.username}`,
       previous_value: prev,
-      new_value: { ...user.profile, status: user.status },
+      new_value: { ...user.profile, status: user.status, disabled_reason: user.disabled_reason },
     });
+
+    this.saveToDisk();
 
     const { password_hash, ...safe } = user;
     return safe;
@@ -2031,7 +2057,7 @@ class DatabaseManager {
     const targetUser = this.db.users.find((u) => u.id === targetUserId);
     if (!targetUser) throw new Error('Target user not found');
     if (targetUser.status === 'disabled' && user.role !== 'super_admin') {
-      throw new Error('This user is disabled, please contact the Administrator');
+      throw new Error('dis user is disabled please contact the Super admin');
     }
 
     // Check if direct conversation already exists

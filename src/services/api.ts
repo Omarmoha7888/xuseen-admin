@@ -47,7 +47,14 @@ async function parseResponse(res: Response): Promise<any> {
   try {
     return JSON.parse(text);
   } catch {
-    return { error: text || `HTTP error ${res.status}` };
+    if (res.status === 403 || text.includes('403 Forbidden') || text.includes('Forbidden')) {
+      return {
+        error: 'dis user is disabled please contact the Super admin',
+        code: 'USER_DISABLED',
+      };
+    }
+    const cleanText = text.replace(/<[^>]*>?/gm, '').trim();
+    return { error: cleanText || `HTTP error ${res.status}` };
   }
 }
 
@@ -72,17 +79,16 @@ async function request<T>(endpoint: string, options: RequestInit = {}, retries =
         const isAuthLoginRoute = endpoint.includes('/auth/login');
         const isDisabled =
           data.code === 'USER_DISABLED' ||
-          res.status === 403 ||
           errorText.toLowerCase().includes('disabled') ||
-          errorText.toLowerCase().includes('revoked');
+          (isAuthLoginRoute && (res.status === 403 || errorText.includes('403') || errorText.toLowerCase().includes('forbidden')));
 
         if (isDisabled) {
           localStorage.removeItem('balcad_crm_token');
           localStorage.removeItem('balcad_crm_active_user');
           localStorage.removeItem('balcad_crm_active_user_v3');
-          localStorage.setItem('balcad_auth_disabled_msg', 'This user is disabled, please contact the Administrator');
-          window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'This user is disabled, please contact the Administrator' } }));
-          throw new Error('This user is disabled, please contact the Administrator');
+          localStorage.setItem('balcad_auth_disabled_msg', 'dis user is disabled please contact the Super admin');
+          window.dispatchEvent(new CustomEvent('balcad_auth_expired', { detail: { message: 'dis user is disabled please contact the Super admin' } }));
+          throw new Error('dis user is disabled please contact the Super admin');
         }
 
         if (res.status === 401 && !isAuthLoginRoute) {

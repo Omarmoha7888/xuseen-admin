@@ -176,7 +176,7 @@ function authenticateUser(req: Request, res: Response, next: NextFunction) {
   if (user.status === 'disabled') {
     sessions.delete(sessionId);
     saveSessionsToDisk();
-    return res.status(401).json({ error: 'This user is disabled, please contact the Administrator', code: 'USER_DISABLED' });
+    return res.status(401).json({ error: 'dis user is disabled please contact the Super admin', code: 'USER_DISABLED' });
   }
 
   (req as any).user = user;
@@ -225,7 +225,11 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
 
   // Account status check
   if (user.status === 'disabled') {
-    return res.status(403).json({ error: 'This user is disabled, please contact the Administrator', code: 'USER_DISABLED' });
+    return res.status(401).json({
+      error: 'dis user is disabled please contact the Super admin',
+      code: 'USER_DISABLED',
+      reason: user.disabled_reason || 'DIS USER IS DISABLED PY WRONG PASSWORD',
+    });
   }
 
   // Password verification
@@ -242,6 +246,22 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
     (user.role === 'employee' && (cleanPass === 'password123' || cleanPass === '123456'));
 
   if (!isMatch) {
+    if (user.role !== 'super_admin') {
+      user.failed_login_attempts = (user.failed_login_attempts || 0) + 1;
+      if (user.failed_login_attempts > 3) {
+        user.status = 'disabled';
+        user.disabled_reason = 'DIS USER IS DISABLED PY WRONG PASSWORD';
+        user.disabled_at = new Date().toISOString();
+        user.disabled_by = 'SYSTEM_WRONG_PASSWORD';
+        dbManager.saveToDisk();
+        return res.status(401).json({
+          error: 'dis user is disabled please contact the Super admin',
+          code: 'USER_DISABLED',
+          reason: 'DIS USER IS DISABLED PY WRONG PASSWORD',
+        });
+      }
+      dbManager.saveToDisk();
+    }
     attemptInfo.attempts += 1;
     if (attemptInfo.attempts >= 5) {
       attemptInfo.lockoutUntil = Date.now() + 60000; // 1 minute lockout
@@ -251,6 +271,8 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
   }
 
   // Reset login attempt counter on success
+  user.failed_login_attempts = 0;
+  dbManager.saveToDisk();
   loginAttempts.delete(cleanUsername);
 
   // Update last login
