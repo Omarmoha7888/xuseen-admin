@@ -64,7 +64,19 @@ export const Header: React.FC<HeaderProps> = ({
       });
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isFinance =
+    user?.profile?.department?.toLowerCase().includes('finance') ||
+    user?.profile?.department?.toLowerCase().includes('account');
+
+  const visibleNotifications = notifications.filter((n) => {
+    if (n.type === 'cash_closure') {
+      return isSuperAdmin || isFinance;
+    }
+    return true;
+  });
+
+  const unreadCount = visibleNotifications.filter((n) => !n.read).length;
 
   const handleMarkAllRead = async () => {
     await api.markAllNotificationsRead();
@@ -230,10 +242,10 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               <div className="max-h-72 overflow-y-auto divide-y divide-slate-800/50">
-                {notifications.length === 0 ? (
+                {visibleNotifications.length === 0 ? (
                   <div className="p-6 text-center text-xs text-slate-400">{t('no_notifications')}</div>
                 ) : (
-                  notifications.map((n) => (
+                  visibleNotifications.map((n) => (
                     <div
                       key={n.id}
                       className={`p-3 text-xs transition ${

@@ -18,7 +18,8 @@
         "department": "Executive Management",
         "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
       },
-      "lockout_until": null
+      "lockout_until": null,
+      "last_cash_counter_closed_at": "2026-10-08T08:55:24.765Z"
     },
     {
       "id": "usr-staff-1790960387058",
@@ -40,7 +41,8 @@
       "disabled_reason": null,
       "disabled_at": null,
       "disabled_by": null,
-      "lockout_until": null
+      "lockout_until": null,
+      "last_cash_counter_closed_at": "2026-10-08T08:56:30.308Z"
     }
   ],
   "customers": [],
@@ -57,8 +59,8 @@
       "assigned_staff": "blc00002",
       "assigned_staff_id": null,
       "total_price": 5000,
-      "amount_paid": 50,
-      "outstanding_debt": 4950,
+      "amount_paid": 450,
+      "outstanding_debt": 4550,
       "currency": "USD",
       "service_details": {
         "departure_city": "Mogadishu (MGQ)",
@@ -79,7 +81,7 @@
       "price_entered_by": "blc00002",
       "price_entered_at": "2026-10-03T09:16:41.394Z",
       "created_at": "2026-10-03T09:16:41.394Z",
-      "updated_at": "2026-10-03T09:16:41.394Z",
+      "updated_at": "2026-10-08T08:56:18.862Z",
       "status_history": [
         {
           "id": "osh-1791019001394",
@@ -131,6 +133,32 @@
           "total_price_after": 5000,
           "total_paid_after": 50,
           "reason": "618590999"
+        },
+        {
+          "id": "mod-1791449749353",
+          "order_id": "ord-1791019001394",
+          "action_type": "payment_received",
+          "staff_username": "blc00001",
+          "timestamp": "2026-10-08T08:55:49.353Z",
+          "description": "Lacag-bixin $150 (Cash Counter) waxa qabtay @blc00001 - Tijaabo bixin cusub. Deyn harka: $4800",
+          "previous_debt": 4950,
+          "debt_balance_after": 4800,
+          "total_price_after": 5000,
+          "total_paid_after": 200,
+          "reason": "Tijaabo bixin cusub"
+        },
+        {
+          "id": "mod-1791449778862",
+          "order_id": "ord-1791019001394",
+          "action_type": "payment_received",
+          "staff_username": "blc00002",
+          "timestamp": "2026-10-08T08:56:18.862Z",
+          "description": "Lacag-bixin $250 (Cash Counter) waxa qabtay @blc00002 - Cumar collected 250 cash. Deyn harka: $4550",
+          "previous_debt": 4800,
+          "debt_balance_after": 4550,
+          "total_price_after": 5000,
+          "total_paid_after": 450,
+          "reason": "Cumar collected 250 cash"
         }
       ]
     },
@@ -999,9 +1027,111 @@
       "received_by": "blc00002",
       "payment_date": "2026-10-03",
       "created_at": "2026-10-03T09:16:41.394Z"
+    },
+    {
+      "id": "PAY-1007",
+      "order_id": "ord-1791019001394",
+      "amount": 150,
+      "currency": "USD",
+      "payment_method": "Cash Counter",
+      "payment_note": "Tijaabo bixin cusub",
+      "received_by": "blc00001",
+      "payment_date": "2026-10-08",
+      "created_at": "2026-10-08T08:55:49.352Z"
+    },
+    {
+      "id": "PAY-1008",
+      "order_id": "ord-1791019001394",
+      "amount": 250,
+      "currency": "USD",
+      "payment_method": "Cash Counter",
+      "payment_note": "Cumar collected 250 cash",
+      "received_by": "blc00002",
+      "payment_date": "2026-10-08",
+      "created_at": "2026-10-08T08:56:18.862Z"
     }
   ],
   "transactions": [
+    {
+      "id": "TRX-1011",
+      "order_id": "cls-1791449790308",
+      "customer_name": "Dhiibitaan: Hussein Mohamud Ali",
+      "transaction_type": "Cash Counter Handover",
+      "previous_balance": 300,
+      "payment_amount": 300,
+      "new_balance": 0,
+      "total_paid_before": 300,
+      "total_paid_after": 0,
+      "currency": "USD",
+      "changed_by": "blc00002",
+      "created_at": "2026-10-08T08:56:30.308Z",
+      "notes": "Xisaab xir sanduuq: $300 loo dhiibay Hussein Mohamud Ali (@blc00001, Tel: 612483838)",
+      "closure_details": {
+        "recipient_name": "Hussein Mohamud Ali",
+        "recipient_phone": "612483838",
+        "recipient_username": "blc00001",
+        "proof_image_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "employee_name": "CUMAR TAAKUUR",
+        "employee_username": "blc00002",
+        "notes": "Cumar xisaab xir"
+      }
+    },
+    {
+      "id": "TRX-1010",
+      "order_id": "BAL-2026-00016",
+      "customer_name": "Customer",
+      "payment_id": "PAY-1008",
+      "transaction_type": "Partial Payment",
+      "previous_balance": 4800,
+      "payment_amount": 250,
+      "new_balance": 4550,
+      "total_paid_before": 200,
+      "total_paid_after": 450,
+      "currency": "USD",
+      "changed_by": "blc00002",
+      "created_at": "2026-10-08T08:56:18.862Z",
+      "notes": "Cumar collected 250 cash"
+    },
+    {
+      "id": "TRX-1009",
+      "order_id": "BAL-2026-00016",
+      "customer_name": "Customer",
+      "payment_id": "PAY-1007",
+      "transaction_type": "Partial Payment",
+      "previous_balance": 4950,
+      "payment_amount": 150,
+      "new_balance": 4800,
+      "total_paid_before": 50,
+      "total_paid_after": 200,
+      "currency": "USD",
+      "changed_by": "blc00001",
+      "created_at": "2026-10-08T08:55:49.353Z",
+      "notes": "Tijaabo bixin cusub"
+    },
+    {
+      "id": "TRX-1008",
+      "order_id": "cls-1791449724765",
+      "customer_name": "Dhiibitaan: Hussein Mohamud Ali",
+      "transaction_type": "Cash Counter Handover",
+      "previous_balance": 6000,
+      "payment_amount": 6000,
+      "new_balance": 0,
+      "total_paid_before": 6000,
+      "total_paid_after": 0,
+      "currency": "USD",
+      "changed_by": "blc00001",
+      "created_at": "2026-10-08T08:55:24.765Z",
+      "notes": "Xisaab xir sanduuq: $6,000 loo dhiibay Hussein Mohamud Ali (@blc00001, Tel: 612483838)",
+      "closure_details": {
+        "recipient_name": "Hussein Mohamud Ali",
+        "recipient_phone": "612483838",
+        "recipient_username": "blc00001",
+        "proof_image_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "employee_name": "Hussein Mohamud Ali",
+        "employee_username": "blc00001",
+        "notes": "Tijaabo xisaab xir sanduuq"
+      }
+    },
     {
       "id": "TRX-1007",
       "order_id": "BAL-2026-00016",
@@ -1355,6 +1485,46 @@
   ],
   "notifications": [
     {
+      "id": "notif-1791449790331",
+      "type": "cash_closure",
+      "title": "Xisaab Xir Sanduuqa: @blc00002 ($300)",
+      "message": "@blc00002 (CUMAR TAAKUUR) waxa uu xiray sanduuqa lacagta ($300). Lacagta waxaa loo dhiibay: Hussein Mohamud Ali (@blc00001, Tel: 612483838).",
+      "related_record_id": "cls-1791449790308",
+      "user_id": "all",
+      "read": false,
+      "created_at": "2026-10-08T08:56:30.331Z"
+    },
+    {
+      "id": "notif-1791449778867",
+      "type": "payment",
+      "title": "Payment Received",
+      "message": "Payment of $250 received for order BAL-2026-00016 by blc00002. Balance: $4550",
+      "related_record_id": "BAL-2026-00016",
+      "user_id": "all",
+      "read": false,
+      "created_at": "2026-10-08T08:56:18.867Z"
+    },
+    {
+      "id": "notif-1791449749358",
+      "type": "payment",
+      "title": "Payment Received",
+      "message": "Payment of $150 received for order BAL-2026-00016 by blc00001. Balance: $4800",
+      "related_record_id": "BAL-2026-00016",
+      "user_id": "all",
+      "read": false,
+      "created_at": "2026-10-08T08:55:49.358Z"
+    },
+    {
+      "id": "notif-1791449724792",
+      "type": "cash_closure",
+      "title": "Xisaab Xir Sanduuqa: @blc00001 ($6,000)",
+      "message": "@blc00001 (Hussein Mohamud Ali) waxa uu xiray sanduuqa lacagta ($6,000). Lacagta waxaa loo dhiibay: Hussein Mohamud Ali (@blc00001, Tel: 612483838).",
+      "related_record_id": "cls-1791449724765",
+      "user_id": "all",
+      "read": false,
+      "created_at": "2026-10-08T08:55:24.792Z"
+    },
+    {
       "id": "notif-1791372808233",
       "type": "payment",
       "title": "Payment Received",
@@ -1456,6 +1626,60 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "act-1791449790331-161",
+      "user_id": "usr-staff-1790960387058",
+      "username": "blc00002",
+      "action": "Cash Counter Closed",
+      "entity_type": "payment",
+      "entity_id": "cls-1791449790308",
+      "details": "Xisaab xir sanduuq: $300 oo loo dhiibay Hussein Mohamud Ali (@blc00001) by @blc00002",
+      "created_at": "2026-10-08T08:56:30.331Z"
+    },
+    {
+      "id": "act-1791449778862-576",
+      "user_id": "usr-staff-1790960387058",
+      "username": "blc00002",
+      "action": "Payment Received",
+      "entity_type": "payment",
+      "entity_id": "PAY-1008",
+      "details": "Financial update by: blc00002 | Payment of $250 for BAL-2026-00016. Remaining debt: $4550",
+      "previous_value": {
+        "debt": 4800
+      },
+      "new_value": {
+        "debt": 4550,
+        "total_paid": 450
+      },
+      "created_at": "2026-10-08T08:56:18.862Z"
+    },
+    {
+      "id": "act-1791449749353-151",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Payment Received",
+      "entity_type": "payment",
+      "entity_id": "PAY-1007",
+      "details": "Financial update by: blc00001 | Payment of $150 for BAL-2026-00016. Remaining debt: $4800",
+      "previous_value": {
+        "debt": 4950
+      },
+      "new_value": {
+        "debt": 4800,
+        "total_paid": 200
+      },
+      "created_at": "2026-10-08T08:55:49.353Z"
+    },
+    {
+      "id": "act-1791449724792-585",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Cash Counter Closed",
+      "entity_type": "payment",
+      "entity_id": "cls-1791449724765",
+      "details": "Xisaab xir sanduuq: $6,000 oo loo dhiibay Hussein Mohamud Ali (@blc00001) by @blc00001",
+      "created_at": "2026-10-08T08:55:24.792Z"
+    },
     {
       "id": "act-1791372808251-363",
       "user_id": "usr-admin-01",
@@ -2883,6 +3107,38 @@
       "entity_id": "conv-01",
       "details": "Super Admin viewed internal staff conversation between mohamed and staff",
       "created_at": "2026-04-25T11:00:00Z"
+    }
+  ],
+  "cash_closures": [
+    {
+      "id": "cls-1791449790308",
+      "employee_id": "usr-staff-1790960387058",
+      "employee_username": "blc00002",
+      "employee_name": "CUMAR TAAKUUR",
+      "recipient_name": "Hussein Mohamud Ali",
+      "recipient_phone": "612483838",
+      "recipient_username": "blc00001",
+      "amount": 300,
+      "currency": "USD",
+      "proof_image_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "notes": "Cumar xisaab xir",
+      "closed_at": "2026-10-08T08:56:30.308Z",
+      "created_at": "2026-10-08T08:56:30.308Z"
+    },
+    {
+      "id": "cls-1791449724765",
+      "employee_id": "usr-admin-01",
+      "employee_username": "blc00001",
+      "employee_name": "Hussein Mohamud Ali",
+      "recipient_name": "Hussein Mohamud Ali",
+      "recipient_phone": "612483838",
+      "recipient_username": "blc00001",
+      "amount": 6000,
+      "currency": "USD",
+      "proof_image_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "notes": "Tijaabo xisaab xir sanduuq",
+      "closed_at": "2026-10-08T08:55:24.765Z",
+      "created_at": "2026-10-08T08:55:24.765Z"
     }
   ]
 }

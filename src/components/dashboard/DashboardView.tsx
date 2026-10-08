@@ -22,11 +22,14 @@ import {
   Car,
   Bell,
   CreditCard,
+  Lock,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 import { Order, Transaction, DashboardMetrics } from '../../types';
+import { CloseCashCounterModal } from './CloseCashCounterModal';
 
 interface DashboardViewProps {
   onNavigateTab: (tab: string, filter?: string, serviceFilter?: string) => void;
@@ -44,6 +47,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isCloseCounterModalOpen, setIsCloseCounterModalOpen] = useState(false);
+  const [selectedStaffCounter, setSelectedStaffCounter] = useState('All');
+  const [customStaffCounterData, setCustomStaffCounterData] = useState<{
+    balance: number;
+    collections_count: number;
+    username: string;
+  } | null>(null);
+
+  const fetchStaffCounter = async (staffUsername: string) => {
+    try {
+      if (staffUsername === 'All') {
+        setCustomStaffCounterData(null);
+      } else {
+        const res = await api.getCashCounter(staffUsername);
+        setCustomStaffCounterData(res);
+      }
+    } catch {}
+  };
+
+  const handleStaffCounterChange = (staff: string) => {
+    setSelectedStaffCounter(staff);
+    fetchStaffCounter(staff);
+  };
+
+  const currentCashCounterBalance =
+    customStaffCounterData !== null
+      ? customStaffCounterData.balance
+      : (metrics?.cash_counter ?? 0);
+
+  const currentCollectionsCount =
+    customStaffCounterData !== null
+      ? customStaffCounterData.collections_count
+      : (metrics?.cash_counter_collections_count ?? 0);
 
   useEffect(() => {
     loadDashboardData();
@@ -273,7 +309,69 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 2. KPI Cards Grid - All 12 Cards are Fully Interactive & Responsive */}
+      {/* 2. CASH COUNTER CARD - Individual to each employee with Close Counter action */}
+      <div className="bg-gradient-to-br from-[#16213b] via-[#101728] to-[#0b101c] border-2 border-amber-500/50 hover:border-amber-400/80 rounded-2xl p-4 sm:p-5 shadow-2xl transition duration-150">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500/30 to-emerald-500/20 text-amber-300 flex items-center justify-center shrink-0 border border-amber-500/40 shadow-inner">
+              <DollarSign className="w-6 h-6 text-amber-300" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+                  <span>Cash Counter Card (Sanduuqa Lacagta)</span>
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-bold">
+                  {user?.role === 'super_admin' ? 'Xisaabta Shakhsiga & Shaqaalaha' : `Gaar u ah: @${user?.username}`}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] font-mono border border-emerald-500/30">
+                  {currentCollectionsCount} ururin
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Lacagaha dalabaadka cusub iyo deynta la soo celiyay toos ayey halkan ugu dhacayaan. Shaqaale kasta sanduuq gooni ah ayuu leeyahay.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 ml-auto md:ml-0">
+            {user?.role === 'super_admin' && (
+              <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs font-mono">
+                <span className="text-slate-400 text-[11px]">Eeg Shaqaale:</span>
+                <select
+                  value={selectedStaffCounter}
+                  onChange={(e) => handleStaffCounterChange(e.target.value)}
+                  className="bg-transparent text-amber-300 font-bold focus:outline-none cursor-pointer"
+                >
+                  <option value="All" className="bg-slate-900 text-white">@blc00001 (Super Admin)</option>
+                  <option value="blc00002" className="bg-slate-900 text-white">@blc00002 (Cumar Taakuur)</option>
+                  <option value="mohamed" className="bg-slate-900 text-white">@mohamed (Mohamed)</option>
+                  <option value="sarah" className="bg-slate-900 text-white">@sarah (Sarah)</option>
+                  <option value="ali" className="bg-slate-900 text-white">@ali (Ali)</option>
+                </select>
+              </div>
+            )}
+
+            <div className="text-right px-3 py-1 bg-slate-900/60 rounded-xl border border-slate-800">
+              <span className="text-[10px] uppercase font-mono text-slate-400 block">Balance-ka Hadda</span>
+              <span className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-200 to-emerald-300 font-mono">
+                ${currentCashCounterBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            <button
+              onClick={() => setIsCloseCounterModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition active:scale-95 flex items-center gap-2 cursor-pointer"
+              title="Xir xisaabta sanduuqa una celi $0"
+            >
+              <Lock className="w-4 h-4 text-slate-950" />
+              <span>Xisaab Xir (Close Counter)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. KPI Cards Grid - Fully Interactive & Responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         {/* 1. New Requests */}
         <div
@@ -938,6 +1036,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Close Cash Counter Modal */}
+      <CloseCashCounterModal
+        isOpen={isCloseCounterModalOpen}
+        onClose={() => setIsCloseCounterModalOpen(false)}
+        currentBalance={currentCashCounterBalance}
+        onSuccess={() => {
+          loadDashboardData();
+          if (selectedStaffCounter !== 'All') {
+            fetchStaffCounter(selectedStaffCounter);
+          }
+        }}
+      />
     </div>
   );
 };
