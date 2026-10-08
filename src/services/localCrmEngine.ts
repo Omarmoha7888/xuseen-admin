@@ -11,6 +11,7 @@ import {
   DashboardMetrics,
   OrderStatus,
   ServiceType,
+  CashCounterClosure,
 } from '../types';
 
 interface LocalDB {
@@ -23,6 +24,7 @@ interface LocalDB {
   messages: Message[];
   notifications: NotificationItem[];
   activity_logs: ActivityLog[];
+  cash_closures: CashCounterClosure[];
 }
 
 const LOCAL_STORAGE_KEY = 'balcad_crm_local_db_v3';
@@ -107,73 +109,7 @@ function createInitialLocalDB(): LocalDB {
     },
   ];
 
-  const customers: Customer[] = [
-    {
-      id: 'cust-01',
-      full_name: 'Ahmed Hassan Farah',
-      phone: '615112233',
-      email: 'ahmed.farah@gmail.com',
-      country: 'Somalia',
-      city: 'Mogadishu',
-      notes: 'Frequent business traveler to Nairobi and Dubai.',
-      created_at: '2026-01-12T10:00:00Z',
-      orders_count: 3,
-      total_debt: 250,
-      last_order_date: '2026-02-18T14:30:00Z',
-    },
-    {
-      id: 'cust-02',
-      full_name: 'Khadija Omar Elmi',
-      phone: '615445566',
-      email: 'khadija.elmi@yahoo.com',
-      country: 'Somalia',
-      city: 'Hargeisa',
-      notes: 'Family travel coordinator.',
-      created_at: '2026-01-18T11:20:00Z',
-      orders_count: 2,
-      total_debt: 0,
-      last_order_date: '2026-02-20T09:15:00Z',
-    },
-    {
-      id: 'cust-03',
-      full_name: 'Yusuf Abdi Warsame',
-      phone: '615778899',
-      email: 'yusuf.abdi@gmail.com',
-      country: 'Kenya',
-      city: 'Nairobi',
-      notes: 'Requires Turkey medical visa and flight package.',
-      created_at: '2026-01-25T15:40:00Z',
-      orders_count: 2,
-      total_debt: 420,
-      last_order_date: '2026-02-22T16:00:00Z',
-    },
-    {
-      id: 'cust-04',
-      full_name: 'Faiza Nur Mohamed',
-      phone: '615990011',
-      email: 'faiza.nur@outlook.com',
-      country: 'Somalia',
-      city: 'Mogadishu',
-      notes: 'Umrah group booking lead.',
-      created_at: '2026-02-02T08:30:00Z',
-      orders_count: 1,
-      total_debt: 0,
-      last_order_date: '2026-02-15T10:00:00Z',
-    },
-    {
-      id: 'cust-05',
-      full_name: 'Mustafa Jama Ali',
-      phone: '615223344',
-      email: 'mustafa.jama@gmail.com',
-      country: 'United Arab Emirates',
-      city: 'Dubai',
-      notes: 'Business merchant, prompt payment history.',
-      created_at: '2026-02-05T13:10:00Z',
-      orders_count: 2,
-      total_debt: 180,
-      last_order_date: '2026-02-23T11:45:00Z',
-    },
-  ];
+  const customers: Customer[] = [];
 
   const orders: Order[] = [
     {
@@ -449,6 +385,7 @@ function createInitialLocalDB(): LocalDB {
     messages,
     notifications,
     activity_logs,
+    cash_closures: [],
   };
 }
 
@@ -471,6 +408,9 @@ class LocalCRMEngine {
             admin.profile.full_name = 'Hussein Mohamud Ali';
             admin.password_plain = 'xuseen.50';
           }
+        }
+        if (!parsed.cash_closures) {
+          parsed.cash_closures = [];
         }
         return parsed;
       }
@@ -518,6 +458,46 @@ class LocalCRMEngine {
     try {
       localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(user));
     } catch {}
+  }
+
+  private getCashCounterBalance(targetUsername?: string) {
+    const active = this.getActiveUser();
+    const uname = (active.role === 'super_admin' && targetUsername && targetUsername !== 'All')
+      ? targetUsername.toLowerCase()
+      : active.username.toLowerCase();
+
+    const dbUser = this.db.users.find(
+      (u) => u.username.toLowerCase() === uname
+    );
+    const cutoff = dbUser?.last_cash_counter_closed_at || null;
+
+    const eligiblePayments = this.db.payments.filter((p) => {
+      if (p.received_by.toLowerCase() !== uname) return false;
+      if (!cutoff) return true;
+      const t = new Date(p.created_at || p.payment_date).getTime();
+      return t > new Date(cutoff).getTime();
+    });
+
+    const nonDebtOrders = this.db.orders.filter((o) => {
+      if (o.created_by.toLowerCase() !== uname) return false;
+      if (!o.amount_paid || o.amount_paid <= 0) return false;
+      if (cutoff && new Date(o.created_at).getTime() <= new Date(cutoff).getTime()) return false;
+      const alreadyInPayments = this.db.payments.some(
+        (p) => (p.order_id === o.id || p.order_id === o.order_number) && p.received_by.toLowerCase() === uname
+      );
+      return !alreadyInPayments;
+    });
+
+    const paymentSum = eligiblePayments.reduce((s, p) => s + (p.amount || 0), 0);
+    const orderSum = nonDebtOrders.reduce((s, o) => s + (o.amount_paid || 0), 0);
+    const total = paymentSum + orderSum;
+
+    return {
+      balance: Math.round(total * 100) / 100,
+      collections_count: eligiblePayments.length + nonDebtOrders.length,
+      last_closed_at: cutoff,
+      username: uname,
+    };
   }
 
   public handle<T>(endpoint: string, options: RequestInit = {}): T {
@@ -644,8 +624,22 @@ class LocalCRMEngine {
 
     // 4. Dashboard Metrics
     if (cleanEndpoint === '/reports/dashboard' || cleanEndpoint === '/dashboard') {
-      const allOrders = this.db.orders;
-      const permittedOrders = allOrders;
+      const active = this.getActiveUser();
+      const isSuperAdmin = active.role === 'super_admin';
+      const permittedOrders = isSuperAdmin
+        ? this.db.orders
+        : this.db.orders.filter(
+            (o) =>
+              o.created_by.toLowerCase() === active.username.toLowerCase() ||
+              (o.assigned_staff && o.assigned_staff.toLowerCase() === active.username.toLowerCase())
+          );
+      const permittedPayments = isSuperAdmin
+        ? this.db.payments
+        : this.db.payments.filter(
+            (p) =>
+              p.received_by.toLowerCase() === active.username.toLowerCase() ||
+              permittedOrders.some((o) => o.id === p.order_id || o.order_number === p.order_id)
+          );
 
       const todayStr = new Date().toISOString().split('T')[0];
 
@@ -732,6 +726,8 @@ class LocalCRMEngine {
         };
       });
 
+      const cashCounterInfo = this.getCashCounterBalance();
+
       const metrics: DashboardMetrics = {
         new_requests: newRequests,
         pending_orders: pendingCount,
@@ -745,6 +741,9 @@ class LocalCRMEngine {
         todays_requests: todaysRequests,
         todays_orders: todaysOrders,
         active_employees: activeEmployees,
+        cash_counter: cashCounterInfo.balance,
+        cash_counter_collections_count: cashCounterInfo.collections_count,
+        last_cash_counter_closed_at: cashCounterInfo.last_closed_at,
         orders_by_service,
         orders_by_status,
         orders_by_day,
@@ -758,6 +757,15 @@ class LocalCRMEngine {
       let list = [...this.db.orders];
       const status = searchParams.get('status');
       const search = searchParams.get('search');
+      const staff = searchParams.get('staff');
+      if (staff && staff !== 'All') {
+        const qStaff = staff.toLowerCase();
+        list = list.filter(
+          (o) =>
+            o.created_by.toLowerCase() === qStaff ||
+            (o.assigned_staff && o.assigned_staff.toLowerCase() === qStaff)
+        );
+      }
       if (status) {
         list = list.filter((o) => o.status.toLowerCase() === status.toLowerCase());
       }
@@ -889,11 +897,17 @@ class LocalCRMEngine {
       if (idx !== -1) {
         const deleted = this.db.orders.splice(idx, 1)[0];
 
-        // Clean up customer stats
-        const cust = this.db.customers.find((c) => c.id === deleted.customer_id);
-        if (cust) {
-          cust.orders_count = Math.max(0, (cust.orders_count || 1) - 1);
-          cust.total_debt = Math.max(0, (cust.total_debt || 0) - (deleted.outstanding_debt || 0));
+        // Clean up customer stats or auto-delete customer if 0 orders remain
+        const custIndex = this.db.customers.findIndex((c) => c.id === deleted.customer_id);
+        if (custIndex !== -1) {
+          const remainingCustOrders = this.db.orders.filter((o) => o.customer_id === deleted.customer_id);
+          if (remainingCustOrders.length === 0) {
+            this.db.customers.splice(custIndex, 1);
+          } else {
+            const cust = this.db.customers[custIndex];
+            cust.orders_count = remainingCustOrders.length;
+            cust.total_debt = remainingCustOrders.reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
+          }
         }
 
         // Remove associated payments
@@ -993,6 +1007,7 @@ class LocalCRMEngine {
       };
       this.db.payments.unshift(payment);
 
+      // Record transaction
       this.db.transactions.unshift({
         id: `tx-${Date.now()}`,
         order_id: ord.id,
@@ -1008,6 +1023,13 @@ class LocalCRMEngine {
         created_at: new Date().toISOString(),
         notes: body.notes || `Payment for ${ord.order_number}`,
       });
+
+      // Automatically reduce customer debt
+      const cust = this.db.customers.find((c) => c.id === ord.customer_id);
+      if (cust) {
+        const allCustOrders = this.db.orders.filter((o) => o.customer_id === ord.customer_id);
+        cust.total_debt = allCustOrders.reduce((sum, o) => sum + (o.outstanding_debt || 0), 0);
+      }
 
       this.saveDB();
       return { message: 'Payment recorded successfully', payment, order: ord } as unknown as T;
@@ -1026,6 +1048,12 @@ class LocalCRMEngine {
         );
       }
       return list as unknown as T;
+    }
+
+    if (cleanEndpoint === '/customers/clear-all' && method === 'POST') {
+      this.db.customers = [];
+      this.saveDB();
+      return { success: true, message: 'All customers cleared successfully' } as unknown as T;
     }
 
     // 12. Customers: Create
@@ -1054,15 +1082,14 @@ class LocalCRMEngine {
       const customer = this.db.customers.find((c) => c.id === id);
       if (!customer) throw new Error('Customer not found');
       const orders = this.db.orders.filter((o) => o.customer_id === id);
-      return { customer, orders } as unknown as T;
+      const orderIds = orders.map((o) => o.id);
+      const orderNumbers = orders.map((o) => o.order_number);
+      const documents: any[] = [];
+      return { customer, orders, documents } as unknown as T;
     }
 
     if (custMatch && method === 'DELETE') {
       const id = custMatch[1];
-      const active = this.getActiveUser();
-      if (active.role !== 'super_admin') {
-        throw new Error('Only Super Admin can delete customers.');
-      }
       this.db.customers = this.db.customers.filter((c) => c.id !== id);
       this.saveDB();
       return { success: true, message: 'Customer deleted successfully' } as unknown as T;
@@ -1071,6 +1098,15 @@ class LocalCRMEngine {
     // 14. AR Report
     if (cleanEndpoint === '/ar' || cleanEndpoint === '/reports/ar') {
       let debtOrders = this.db.orders.filter((o) => (o.outstanding_debt || 0) > 0 || o.payment_type === 'Debt');
+      const staffFilter = searchParams.get('staff');
+      if (staffFilter && staffFilter !== 'All') {
+        const qStaff = staffFilter.toLowerCase();
+        debtOrders = debtOrders.filter(
+          (o) =>
+            o.created_by.toLowerCase() === qStaff ||
+            (o.assigned_staff && o.assigned_staff.toLowerCase() === qStaff)
+        );
+      }
 
       const rows = debtOrders.map((ord) => {
         const cust = this.db.customers.find((c) => c.id === ord.customer_id) || ord.customer;
@@ -1136,9 +1172,103 @@ class LocalCRMEngine {
       } as unknown as T;
     }
 
-    // 15. Transactions
+    // 15. Transactions (Staff only sees their own; Super Admin & Finance see all)
     if (cleanEndpoint === '/transactions') {
-      return this.db.transactions as unknown as T;
+      const active = this.getActiveUser();
+      let list = [...this.db.transactions];
+      const isSuperAdmin = active.role === 'super_admin';
+      const isFinance =
+        active.profile?.department?.toLowerCase().includes('finance') ||
+        active.profile?.department?.toLowerCase().includes('account');
+      if (!isSuperAdmin && !isFinance) {
+        list = list.filter((t) => t.changed_by.toLowerCase() === active.username.toLowerCase());
+      }
+      return list as unknown as T;
+    }
+
+    // Cash Counter Endpoints
+    if (cleanEndpoint === '/cash-counter' && method === 'GET') {
+      const staff = searchParams.get('staff') || undefined;
+      return this.getCashCounterBalance(staff) as unknown as T;
+    }
+
+    if (cleanEndpoint === '/cash-counter/close' && method === 'POST') {
+      const active = this.getActiveUser();
+      const { recipient_name, recipient_phone, recipient_username, proof_image_url, notes } = body;
+      if (!recipient_name || !recipient_phone || !recipient_username) {
+        throw new Error('Fadlan buuxi magaca, lambarka iyo username-ka qofka aad lacagta u dhiibtay.');
+      }
+      if (!proof_image_url) {
+        throw new Error('Fadlan soo upload-gareey sawir caddaynaya in lacagta loo diray qofkaas.');
+      }
+
+      const { balance } = this.getCashCounterBalance();
+      const closedAt = new Date().toISOString();
+
+      const closure: CashCounterClosure = {
+        id: `cls-${Date.now()}`,
+        employee_id: active.id,
+        employee_username: active.username,
+        employee_name: active.profile?.full_name || active.username,
+        recipient_name: recipient_name.trim(),
+        recipient_phone: recipient_phone.trim(),
+        recipient_username: recipient_username.trim(),
+        amount: balance,
+        currency: 'USD',
+        proof_image_url,
+        notes: notes || '',
+        closed_at: closedAt,
+        created_at: closedAt,
+      };
+
+      if (!this.db.cash_closures) this.db.cash_closures = [];
+      this.db.cash_closures.unshift(closure);
+
+      const dbUser = this.db.users.find((u) => u.id === active.id || u.username.toLowerCase() === active.username.toLowerCase());
+      if (dbUser) {
+        dbUser.last_cash_counter_closed_at = closedAt;
+      }
+      active.last_cash_counter_closed_at = closedAt;
+      this.setActiveUser(active);
+
+      const trxId = `TRX-${1000 + this.db.transactions.length + 1}`;
+      this.db.transactions.unshift({
+        id: trxId,
+        order_id: closure.id,
+        customer_name: `Dhiibitaan: ${closure.recipient_name}`,
+        transaction_type: 'Cash Counter Handover',
+        previous_balance: balance,
+        payment_amount: balance,
+        new_balance: 0,
+        total_paid_before: balance,
+        total_paid_after: 0,
+        currency: 'USD',
+        changed_by: active.username,
+        created_at: closedAt,
+        notes: `Xisaab xir sanduuq: $${balance.toLocaleString()} loo dhiibay ${closure.recipient_name} (@${closure.recipient_username}, Tel: ${closure.recipient_phone})`,
+        closure_details: {
+          recipient_name: closure.recipient_name,
+          recipient_phone: closure.recipient_phone,
+          recipient_username: closure.recipient_username,
+          proof_image_url: closure.proof_image_url,
+          employee_name: closure.employee_name,
+          employee_username: closure.employee_username,
+          notes: closure.notes,
+        },
+      });
+
+      this.db.notifications.unshift({
+        id: `notif-${Date.now()}`,
+        type: 'cash_closure',
+        title: `Xisaab Xir Sanduuqa: @${active.username} ($${balance.toLocaleString()})`,
+        message: `@${active.username} (${closure.employee_name}) waxa uu xiray sanduuqa lacagta ($${balance.toLocaleString()}). Waxaa loo dhiibay: ${closure.recipient_name} (@${closure.recipient_username}, Tel: ${closure.recipient_phone}).`,
+        related_record_id: closure.id,
+        read: false,
+        created_at: closedAt,
+      });
+
+      this.saveDB();
+      return { success: true, closure, balance: 0 } as unknown as T;
     }
 
     // 16. Employees (List, Create, Update, Delete)

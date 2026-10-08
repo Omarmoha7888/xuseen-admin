@@ -26,16 +26,18 @@ export const RecentTransactionsView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('All');
+  const [staffFilter, setStaffFilter] = useState<string>('All');
 
   useEffect(() => {
     loadTransactions();
-  }, [typeFilter]);
+  }, [typeFilter, staffFilter]);
 
   const loadTransactions = async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
       if (typeFilter !== 'All') params.type = typeFilter;
+      if (staffFilter !== 'All') params.staff = staffFilter;
       if (search) params.search = search;
 
       const data = await api.getTransactions(params);
@@ -173,15 +175,39 @@ export const RecentTransactionsView: React.FC = () => {
           ))}
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by Transaction ID (TRX-...), Order ID, Customer name, or Changed By..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
-          />
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by Transaction ID (TRX-...), Order ID, Customer name, or Changed By..."
+              className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+            />
+          </div>
+
+          {user?.role === 'super_admin' ? (
+            <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto">
+              <span className="text-[11px] text-slate-400 font-mono">Shaqaale:</span>
+              <select
+                value={staffFilter}
+                onChange={(e) => setStaffFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 font-mono cursor-pointer w-full sm:w-auto"
+              >
+                <option value="All">Dhamaan Shaqaalaha (All Staff)</option>
+                <option value="blc00001">@blc00001 (Super Admin)</option>
+                <option value="blc00002">@blc00002 (Cumar Taakuur)</option>
+                <option value="mohamed">@mohamed (Mohamed)</option>
+                <option value="sarah">@sarah (Sarah)</option>
+                <option value="ali">@ali (Ali)</option>
+              </select>
+            </div>
+          ) : (
+            <div className="shrink-0 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-medium">
+              Dhaqdhaqaaqaaga Gaarka ah: @{user?.username}
+            </div>
+          )}
         </div>
       </div>
 

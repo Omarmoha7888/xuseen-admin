@@ -143,6 +143,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [user]);
 
+  // Safety Inactivity Auto-logout (10 minutes of inactivity)
+  useEffect(() => {
+    if (!user) return;
+
+    const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes = 600,000 ms
+    let timeoutId: any;
+
+    const handleInactivityLogout = () => {
+      localStorage.removeItem('balcad_crm_token');
+      localStorage.removeItem('balcad_crm_active_user');
+      localStorage.removeItem('balcad_crm_active_user_v3');
+      setUser(null);
+      const expiredMsg =
+        'Session-kaagii wuu dhacay sababtoo ah 10 daqiiqo wax dhaqdhaqaaq ah ma samayn (Session expired due to 10 minutes of inactivity). Fadlan dib u soo gal.';
+      setError(expiredMsg);
+      localStorage.setItem('balcad_auth_disabled_msg', expiredMsg);
+      window.dispatchEvent(
+        new CustomEvent('balcad_auth_expired', { detail: { message: expiredMsg } })
+      );
+    };
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleInactivityLogout, INACTIVITY_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      activityEvents.forEach((ev) => window.removeEventListener(ev, resetTimer));
+    };
+  }, [user]);
+
   const login = async (username: string, pass: string) => {
     setError(null);
     try {

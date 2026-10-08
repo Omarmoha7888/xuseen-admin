@@ -1,4 +1,4 @@
-import { User, Order, Customer, Payment, Transaction, Conversation, Message, ActivityLog, DashboardMetrics } from '../types';
+import { User, Order, Customer, Payment, Transaction, Conversation, Message, ActivityLog, DashboardMetrics, CashCounterClosure } from '../types';
 import { localCrmEngine } from './localCrmEngine';
 
 const API_BASE = '/api';
@@ -378,13 +378,13 @@ export const api = {
     return data;
   },
 
-  async getCustomer(id: string): Promise<{ customer: Customer; orders: Order[] }> {
+  async getCustomer(id: string): Promise<{ customer: Customer; orders: Order[]; documents: any[] }> {
     const cacheKey = `customer_${id}`;
-    const cached = getCached<{ customer: Customer; orders: Order[] }>(cacheKey);
+    const cached = getCached<{ customer: Customer; orders: Order[]; documents: any[] }>(cacheKey);
     if (cached) return cached;
 
-    const data = await request<{ customer: Customer; orders: Order[] }>(`/customers/${id}`);
-    setCached(cacheKey, data, 15000);
+    const data = await request<{ customer: Customer; orders: Order[]; documents: any[] }>(`/customers/${id}`);
+    setCached(cacheKey, data, 10000);
     return data;
   },
 
@@ -393,6 +393,20 @@ export const api = {
     return request<Customer>('/customers', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  async deleteCustomer(id: string): Promise<any> {
+    clearApiCache('customers');
+    return request<any>(`/customers/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async clearAllCustomers(): Promise<any> {
+    clearApiCache('customers');
+    return request<any>('/customers/clear-all', {
+      method: 'POST',
     });
   },
 
@@ -493,6 +507,26 @@ export const api = {
   async markAllNotificationsRead(): Promise<void> {
     await request<any>('/notifications/mark-all-read', {
       method: 'POST',
+    });
+  },
+
+  // Cash Counter
+  async getCashCounter(staff?: string): Promise<{ balance: number; collections_count: number; last_closed_at: string | null; username: string }> {
+    const q = staff ? `?staff=${encodeURIComponent(staff)}` : '';
+    return request<{ balance: number; collections_count: number; last_closed_at: string | null; username: string }>(`/cash-counter${q}`);
+  },
+
+  async closeCashCounter(data: {
+    recipient_name: string;
+    recipient_phone: string;
+    recipient_username: string;
+    proof_image_url: string;
+    notes?: string;
+  }): Promise<{ success: boolean; closure: CashCounterClosure; balance: number }> {
+    clearApiCache();
+    return request<{ success: boolean; closure: CashCounterClosure; balance: number }>('/cash-counter/close', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 };

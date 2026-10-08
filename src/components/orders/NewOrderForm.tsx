@@ -43,7 +43,7 @@ export const NewOrderForm: React.FC<NewOrderFormProps> = ({ onBack, onOrderCreat
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentType, setPaymentType] = useState<PaymentType>('Paid');
   const [currency, setCurrency] = useState<'USD' | 'EUR' | 'SOS'>('USD');
-  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [paymentMethod, setPaymentMethod] = useState('Cash Counter');
   const [paymentNote, setPaymentNote] = useState('');
   const [notes, setNotes] = useState('');
   const [assignedStaff, setAssignedStaff] = useState('');
@@ -793,19 +793,19 @@ export const NewOrderForm: React.FC<NewOrderFormProps> = ({ onBack, onOrderCreat
             {Number(amountPaid) > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
                 <div>
-                  <label className="block text-slate-300 mb-1">Initial Payment Method</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="Cash">Cash (Counter)</option>
-                    <option value="Bank Transfer">Bank Transfer (Premier, IBS, Dahabshiil)</option>
-                    <option value="EVC Plus">EVC Plus (Hormuud)</option>
-                    <option value="Zaad">Zaad (Telesom)</option>
-                    <option value="Sahal">Sahal (Golis)</option>
-                    <option value="Credit Card">Credit Card</option>
-                  </select>
+                  <label className="block text-slate-300 mb-1 font-semibold flex items-center justify-between">
+                    <span>Initial Payment Method</span>
+                    <span className="text-[10px] text-amber-400 font-mono font-bold">Kaliya Cash Counter</span>
+                  </label>
+                  <div className="w-full px-3.5 py-2.5 bg-slate-900 border border-amber-500/50 rounded-xl text-white flex items-center justify-between">
+                    <span className="font-bold text-amber-300 flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-emerald-400" />
+                      Cash Counter (Sanduuqa)
+                    </span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-mono font-semibold">
+                      Fixed (Kaliya)
+                    </span>
+                  </div>
                 </div>
 
                 <div>

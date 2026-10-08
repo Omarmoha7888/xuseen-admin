@@ -6,6 +6,7 @@ import {
   Trash2,
   Eye,
   RefreshCw,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -36,6 +37,20 @@ export const OrdersListView: React.FC<OrdersListViewProps> = ({
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>(initialFilter);
   const [selectedService, setSelectedService] = useState<string>(initialServiceFilter);
+  const [selectedStaff, setSelectedStaff] = useState<string>('All');
+
+  // Available staff for filtering
+  const availableStaff = useMemo(() => {
+    const set = new Set<string>();
+    allOrders.forEach((o) => {
+      if (o.created_by) set.add(o.created_by);
+      if (o.assigned_staff && o.assigned_staff !== 'Unassigned') set.add(o.assigned_staff);
+    });
+    if (user?.username) set.add(user.username);
+    set.add('blc00001');
+    set.add('blc00002');
+    return Array.from(set).sort();
+  }, [allOrders, user]);
 
   // Delete Modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -94,6 +109,16 @@ export const OrdersListView: React.FC<OrdersListViewProps> = ({
       // Service filter
       if (selectedService !== 'All' && ord.service_type !== selectedService) {
         return false;
+      }
+      // Staff filter
+      if (selectedStaff !== 'All') {
+        const qStaff = selectedStaff.toLowerCase();
+        if (
+          ord.created_by.toLowerCase() !== qStaff &&
+          (!ord.assigned_staff || ord.assigned_staff.toLowerCase() !== qStaff)
+        ) {
+          return false;
+        }
       }
       // Search filter
       if (search.trim()) {
@@ -209,8 +234,8 @@ export const OrdersListView: React.FC<OrdersListViewProps> = ({
           ))}
         </div>
 
-        {/* Search & Service Filter */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+        {/* Search & Service & Staff Filter */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1">
           <div className="sm:col-span-2 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -235,6 +260,21 @@ export const OrdersListView: React.FC<OrdersListViewProps> = ({
               <option value="Travel Package">Travel Package</option>
               <option value="Airport Transfer">Airport Transfer</option>
               <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <select
+              value={selectedStaff}
+              onChange={(e) => setSelectedStaff(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer font-mono"
+            >
+              <option value="All">Dhamaan Shaqaalaha (All)</option>
+              {availableStaff.map((st) => (
+                <option key={st} value={st}>
+                  @{st}
+                </option>
+              ))}
             </select>
           </div>
         </div>

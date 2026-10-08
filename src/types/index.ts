@@ -13,6 +13,7 @@ export interface User {
   lockout_until?: string | null;
   created_at: string;
   last_login?: string | null;
+  last_cash_counter_closed_at?: string | null;
   profile: StaffProfile;
 }
 
@@ -49,6 +50,26 @@ export type OrderStatus =
 
 export type PaymentType = 'Paid' | 'Debt';
 
+export interface DebtModificationAudit {
+  id: string;
+  order_id: string;
+  action_type:
+    | 'creation'
+    | 'status_change'
+    | 'payment_received'
+    | 'price_adjustment'
+    | 'assignment'
+    | 'document_uploaded';
+  staff_username: string;
+  timestamp: string;
+  description: string;
+  previous_debt: number;
+  debt_balance_after: number;
+  total_price_after: number;
+  total_paid_after: number;
+  reason?: string;
+}
+
 export interface Customer {
   id: string;
   full_name: string;
@@ -61,6 +82,7 @@ export interface Customer {
   orders_count?: number;
   total_debt?: number;
   last_order_date?: string;
+  documents?: DocumentFile[];
 }
 
 export interface FlightDetails {
@@ -161,6 +183,7 @@ export interface Order {
   status_history?: OrderStatusHistory[];
   assignment_history?: OrderAssignmentHistory[];
   payments?: Payment[];
+  modifications_history?: DebtModificationAudit[];
 }
 
 export interface OrderStatusHistory {
@@ -195,6 +218,22 @@ export interface Payment {
   created_at: string;
 }
 
+export interface CashCounterClosure {
+  id: string;
+  employee_id: string;
+  employee_username: string;
+  employee_name: string;
+  recipient_name: string;
+  recipient_phone: string;
+  recipient_username: string;
+  amount: number;
+  currency: string;
+  proof_image_url: string;
+  notes?: string;
+  closed_at: string;
+  created_at: string;
+}
+
 export type TransactionType =
   | 'Order Created'
   | 'Payment Received'
@@ -202,7 +241,8 @@ export type TransactionType =
   | 'Debt Updated'
   | 'Debt Fully Paid'
   | 'Price Updated'
-  | 'Financial Adjustment';
+  | 'Financial Adjustment'
+  | 'Cash Counter Handover';
 
 export interface Transaction {
   id: string; // e.g. TRX-1001
@@ -219,6 +259,15 @@ export interface Transaction {
   changed_by: string; // username
   created_at: string;
   notes?: string;
+  closure_details?: {
+    recipient_name: string;
+    recipient_phone: string;
+    recipient_username: string;
+    proof_image_url: string;
+    employee_name: string;
+    employee_username: string;
+    notes?: string;
+  };
 }
 
 export interface FinancialAdjustment {
@@ -299,7 +348,7 @@ export interface Message {
 export interface NotificationItem {
   id: string;
   user_id?: string;
-  type: 'order' | 'assignment' | 'message' | 'status' | 'document' | 'payment' | 'chat';
+  type: 'order' | 'assignment' | 'message' | 'status' | 'document' | 'payment' | 'chat' | 'cash_closure';
   title: string;
   message: string;
   related_record_id?: string | null;
@@ -333,6 +382,9 @@ export interface DashboardMetrics {
   todays_requests: number;
   todays_orders: number;
   active_employees: number;
+  cash_counter?: number;
+  cash_counter_collections_count?: number;
+  last_cash_counter_closed_at?: string | null;
   orders_by_service: { service: ServiceType; count: number; percentage: number }[];
   orders_by_status: { status: OrderStatus; count: number; percentage: number }[];
   orders_by_day: { date: string; count: number }[];

@@ -7,7 +7,7 @@
       "status": "active",
       "failed_login_attempts": 0,
       "created_at": "2026-01-01T08:00:00Z",
-      "last_login": "2026-10-03T14:56:13.203Z",
+      "last_login": "2026-10-07T11:33:27.952Z",
       "password_hash": "$2b$10$EJWLq6jFl3fK1SGvEaO9PukO1AfM.uIdwHrjf7Cpl5Y/14.YqlNpu",
       "profile": {
         "id": "prof-01",
@@ -36,181 +36,14 @@
         "email": "cumartaakuur7888@gmail.com",
         "department": "Finance & Accounts"
       },
-      "last_login": "2026-10-03T14:56:06.680Z",
+      "last_login": "2026-10-07T11:33:28.190Z",
       "disabled_reason": null,
       "disabled_at": null,
       "disabled_by": null,
       "lockout_until": null
     }
   ],
-  "customers": [
-    {
-      "id": "cust-01",
-      "full_name": "Ahmed Hassan Farah",
-      "phone": "615112233",
-      "email": "ahmed.hassan@gmail.com",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "notes": "Frequent VIP business traveler",
-      "created_at": "2026-02-10T10:00:00Z",
-      "orders_count": 2,
-      "total_debt": 0,
-      "last_order_date": "2026-04-26"
-    },
-    {
-      "id": "cust-02",
-      "full_name": "Fatima Ali Nur",
-      "phone": "615223344",
-      "email": "fatima.ali@yahoo.com",
-      "country": "Somalia",
-      "city": "Hargeisa",
-      "notes": "Family visa requests",
-      "created_at": "2026-02-14T11:00:00Z",
-      "orders_count": 1,
-      "total_debt": 0,
-      "last_order_date": "2026-04-26"
-    },
-    {
-      "id": "cust-03",
-      "full_name": "Mohamed Yusuf Shire",
-      "phone": "615334455",
-      "email": "yusuf.shire@outlook.com",
-      "country": "Somalia",
-      "city": "Garowe",
-      "notes": "Requests 5-star hotels only",
-      "created_at": "2026-02-18T14:00:00Z",
-      "orders_count": 1,
-      "total_debt": 0,
-      "last_order_date": "2026-04-25"
-    },
-    {
-      "id": "cust-04",
-      "full_name": "Amina Sheikh Omar",
-      "phone": "615445566",
-      "email": "amina.sheikh@gmail.com",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "notes": "Dubai group vacationer. Has agreed payment schedule.",
-      "created_at": "2026-02-22T09:00:00Z",
-      "orders_count": 1,
-      "total_debt": 1300,
-      "last_order_date": "2026-04-24"
-    },
-    {
-      "id": "cust-05",
-      "full_name": "Ali Ahmed Jama",
-      "phone": "615556677",
-      "email": "ali.ahmed.j@gmail.com",
-      "country": "Somalia",
-      "city": "Kismayo",
-      "notes": "Regular economy ticketing",
-      "created_at": "2026-03-01T15:30:00Z",
-      "orders_count": 0,
-      "total_debt": 0,
-      "last_order_date": "2026-04-24"
-    },
-    {
-      "id": "cust-06",
-      "full_name": "Sahra Osman Duale",
-      "phone": "615667788",
-      "email": "sahra.osman@hotmail.com",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "notes": "Visa processing debt order pending payment",
-      "created_at": "2026-03-05T08:45:00Z",
-      "orders_count": 1,
-      "total_debt": 450,
-      "last_order_date": "2026-04-22"
-    },
-    {
-      "id": "cust-07",
-      "full_name": "Hassan Nur Roble",
-      "phone": "615778899",
-      "email": "hassan.roble@gmail.com",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "notes": "VIP transfer client",
-      "created_at": "2026-03-10T12:00:00Z",
-      "orders_count": 1,
-      "total_debt": 0,
-      "last_order_date": "2026-04-21"
-    },
-    {
-      "id": "cust-08",
-      "full_name": "Maryan Abdi Warsame",
-      "phone": "615889900",
-      "email": "maryan.abdi@gmail.com",
-      "country": "Somalia",
-      "city": "Baidoa",
-      "notes": "Nairobi medical travel",
-      "created_at": "2026-03-12T16:20:00Z",
-      "orders_count": 1,
-      "total_debt": 0,
-      "last_order_date": "2026-04-20"
-    },
-    {
-      "id": "cust-09",
-      "full_name": "Liban Jama Warsame",
-      "phone": "615990011",
-      "email": "liban.jama@gmail.com",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "notes": "Safari holiday package with installment agreement",
-      "created_at": "2026-03-15T11:10:00Z",
-      "orders_count": 1,
-      "total_debt": 1100,
-      "last_order_date": "2026-04-18"
-    },
-    {
-      "id": "cust-10",
-      "full_name": "Deqa Farah Egal",
-      "phone": "615001122",
-      "email": "deqa.farah@gmail.com",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "notes": "Luxury Dubai hotel reservation",
-      "created_at": "2026-03-20T14:40:00Z",
-      "orders_count": 1,
-      "total_debt": 0,
-      "last_order_date": "2026-04-16"
-    },
-    {
-      "id": "cust-1790945275150",
-      "full_name": "Test Somali Client",
-      "phone": "252615555555",
-      "email": "",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "created_at": "2026-10-02T12:47:55.150Z",
-      "orders_count": 0,
-      "total_debt": 0,
-      "last_order_date": "2026-10-02"
-    },
-    {
-      "id": "cust-1791017477922",
-      "full_name": "CUMAR TAAKUUR",
-      "phone": "618590999",
-      "email": "cumartaakuur7888@gmail.com",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "created_at": "2026-10-03T08:51:17.922Z",
-      "orders_count": 1,
-      "total_debt": 4500,
-      "last_order_date": "2026-10-03"
-    },
-    {
-      "id": "cust-1791019001394",
-      "full_name": "CUMAR TAAKUUR",
-      "phone": "618590999",
-      "email": "cumartaakuur7888@gmail.com",
-      "country": "Somalia",
-      "city": "Mogadishu",
-      "created_at": "2026-10-03T09:16:41.394Z",
-      "orders_count": 1,
-      "total_debt": 4950,
-      "last_order_date": "2026-10-03"
-    }
-  ],
+  "customers": [],
   "orders": [
     {
       "id": "ord-1791019001394",
@@ -258,7 +91,48 @@
           "created_at": "2026-10-03T09:16:41.394Z"
         }
       ],
-      "assignment_history": []
+      "assignment_history": [],
+      "modifications_history": [
+        {
+          "id": "mod-ord-1791019001394-created",
+          "order_id": "ord-1791019001394",
+          "action_type": "creation",
+          "staff_username": "blc00002",
+          "timestamp": "2026-10-03T09:16:41.394Z",
+          "description": "Dalabka waxa diiwaan galiyay @blc00002 (Initial creation). Wadarta: $5000, Hormaris: $50, Deyn bilow ah: $4950",
+          "previous_debt": 0,
+          "debt_balance_after": 4950,
+          "total_price_after": 5000,
+          "total_paid_after": 50,
+          "reason": "Diiwaangalinta dalabka"
+        },
+        {
+          "id": "osh-1791019001394",
+          "order_id": "ord-1791019001394",
+          "action_type": "status_change",
+          "staff_username": "blc00002",
+          "timestamp": "2026-10-03T09:16:41.394Z",
+          "description": "Xaaladda dalabka waxa wax ka beddelay @blc00002 -> \"Debt\" (Initial order creation)",
+          "previous_debt": 4950,
+          "debt_balance_after": 4950,
+          "total_price_after": 5000,
+          "total_paid_after": 50,
+          "reason": "Initial order creation"
+        },
+        {
+          "id": "PAY-1006",
+          "order_id": "ord-1791019001394",
+          "action_type": "payment_received",
+          "staff_username": "blc00002",
+          "timestamp": "2026-10-03T09:16:41.394Z",
+          "description": "Lacag bixin $50 (Cash) waxa qabtay @blc00002. Deyn harka: $4950",
+          "previous_debt": 5000,
+          "debt_balance_after": 4950,
+          "total_price_after": 5000,
+          "total_paid_after": 50,
+          "reason": "618590999"
+        }
+      ]
     },
     {
       "id": "ord-1791017477922",
@@ -304,7 +178,48 @@
           "created_at": "2026-10-03T08:51:17.922Z"
         }
       ],
-      "assignment_history": []
+      "assignment_history": [],
+      "modifications_history": [
+        {
+          "id": "mod-ord-1791017477922-created",
+          "order_id": "ord-1791017477922",
+          "action_type": "creation",
+          "staff_username": "blc00001",
+          "timestamp": "2026-10-03T08:51:17.922Z",
+          "description": "Dalabka waxa diiwaan galiyay @blc00001 (Initial creation). Wadarta: $5000, Hormaris: $500, Deyn bilow ah: $4500",
+          "previous_debt": 0,
+          "debt_balance_after": 4500,
+          "total_price_after": 5000,
+          "total_paid_after": 500,
+          "reason": "Diiwaangalinta dalabka"
+        },
+        {
+          "id": "osh-1791017477922",
+          "order_id": "ord-1791017477922",
+          "action_type": "status_change",
+          "staff_username": "blc00001",
+          "timestamp": "2026-10-03T08:51:17.922Z",
+          "description": "Xaaladda dalabka waxa wax ka beddelay @blc00001 -> \"Debt\" (Initial order creation)",
+          "previous_debt": 4500,
+          "debt_balance_after": 4500,
+          "total_price_after": 5000,
+          "total_paid_after": 500,
+          "reason": "Initial order creation"
+        },
+        {
+          "id": "PAY-1005",
+          "order_id": "ord-1791017477922",
+          "action_type": "payment_received",
+          "staff_username": "blc00001",
+          "timestamp": "2026-10-03T08:51:17.922Z",
+          "description": "Lacag bixin $500 (Cash) waxa qabtay @blc00001. Deyn harka: $4500",
+          "previous_debt": 5000,
+          "debt_balance_after": 4500,
+          "total_price_after": 5000,
+          "total_paid_after": 500,
+          "reason": "Ok"
+        }
+      ]
     },
     {
       "id": "ord-01",
@@ -343,7 +258,35 @@
       "price_entered_by": "blc00001",
       "price_entered_at": "2026-04-26T09:00:00Z",
       "created_at": "2026-04-26T09:00:00Z",
-      "updated_at": "2026-04-26T09:30:00Z"
+      "updated_at": "2026-04-26T09:30:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-01-created",
+          "order_id": "ord-01",
+          "action_type": "creation",
+          "staff_username": "blc00001",
+          "timestamp": "2026-04-26T09:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @blc00001 (Initial creation). Wadarta: $1200, Hormaris: $1200, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 1200,
+          "total_paid_after": 1200,
+          "reason": "Diiwaangalinta dalabka"
+        },
+        {
+          "id": "PAY-1001",
+          "order_id": "ord-01",
+          "action_type": "payment_received",
+          "staff_username": "blc00001",
+          "timestamp": "2026-04-26T09:15:00Z",
+          "description": "Lacag bixin $1200 (Bank Transfer) waxa qabtay @blc00001. Deyn harka: $0",
+          "previous_debt": 1200,
+          "debt_balance_after": 0,
+          "total_price_after": 1200,
+          "total_paid_after": 1200,
+          "reason": "Premier Bank transfer #PB884930"
+        }
+      ]
     },
     {
       "id": "ord-02",
@@ -377,7 +320,35 @@
       "price_entered_by": "mohamed",
       "price_entered_at": "2026-04-26T10:15:00Z",
       "created_at": "2026-04-26T10:15:00Z",
-      "updated_at": "2026-04-26T10:15:00Z"
+      "updated_at": "2026-04-26T10:15:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-02-created",
+          "order_id": "ord-02",
+          "action_type": "creation",
+          "staff_username": "mohamed",
+          "timestamp": "2026-04-26T10:15:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @mohamed (Initial creation). Wadarta: $850, Hormaris: $850, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 850,
+          "total_paid_after": 850,
+          "reason": "Diiwaangalinta dalabka"
+        },
+        {
+          "id": "PAY-1002",
+          "order_id": "ord-02",
+          "action_type": "payment_received",
+          "staff_username": "mohamed",
+          "timestamp": "2026-04-26T10:20:00Z",
+          "description": "Lacag bixin $850 (EVC Plus) waxa qabtay @mohamed. Deyn harka: $0",
+          "previous_debt": 850,
+          "debt_balance_after": 0,
+          "total_price_after": 850,
+          "total_paid_after": 850,
+          "reason": "EVC Plus reference #77382940"
+        }
+      ]
     },
     {
       "id": "ord-03",
@@ -408,7 +379,22 @@
       "price_entered_by": "sarah",
       "price_entered_at": "2026-04-25T14:20:00Z",
       "created_at": "2026-04-25T14:20:00Z",
-      "updated_at": "2026-04-25T15:00:00Z"
+      "updated_at": "2026-04-25T15:00:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-03-created",
+          "order_id": "ord-03",
+          "action_type": "creation",
+          "staff_username": "sarah",
+          "timestamp": "2026-04-25T14:20:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @sarah (Initial creation). Wadarta: $650, Hormaris: $650, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 650,
+          "total_paid_after": 650,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-04",
@@ -437,7 +423,35 @@
       "price_entered_by": "blc00001",
       "price_entered_at": "2026-04-24T11:00:00Z",
       "created_at": "2026-04-24T11:00:00Z",
-      "updated_at": "2026-04-24T11:45:00Z"
+      "updated_at": "2026-04-24T11:45:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-04-created",
+          "order_id": "ord-04",
+          "action_type": "creation",
+          "staff_username": "blc00001",
+          "timestamp": "2026-04-24T11:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @blc00001 (Initial creation). Wadarta: $2300, Hormaris: $1000, Deyn bilow ah: $1300",
+          "previous_debt": 0,
+          "debt_balance_after": 1300,
+          "total_price_after": 2300,
+          "total_paid_after": 1000,
+          "reason": "Diiwaangalinta dalabka"
+        },
+        {
+          "id": "PAY-1003",
+          "order_id": "ord-04",
+          "action_type": "payment_received",
+          "staff_username": "blc00001",
+          "timestamp": "2026-04-24T11:15:00Z",
+          "description": "Lacag bixin $1000 (Cash) waxa qabtay @blc00001. Deyn harka: $1300",
+          "previous_debt": 2300,
+          "debt_balance_after": 1300,
+          "total_price_after": 2300,
+          "total_paid_after": 1000,
+          "reason": "Initial partial deposit at main counter"
+        }
+      ]
     },
     {
       "id": "ord-05",
@@ -473,7 +487,22 @@
       "price_entered_by": "mohamed",
       "price_entered_at": "2026-04-24T13:00:00Z",
       "created_at": "2026-04-24T13:00:00Z",
-      "updated_at": "2026-04-24T14:10:00Z"
+      "updated_at": "2026-04-24T14:10:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-05-created",
+          "order_id": "ord-05",
+          "action_type": "creation",
+          "staff_username": "mohamed",
+          "timestamp": "2026-04-24T13:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @mohamed (Initial creation). Wadarta: $980, Hormaris: $980, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 980,
+          "total_paid_after": 980,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-06",
@@ -506,7 +535,22 @@
       "price_entered_by": "sarah",
       "price_entered_at": "2026-04-22T09:30:00Z",
       "created_at": "2026-04-22T09:30:00Z",
-      "updated_at": "2026-04-22T09:30:00Z"
+      "updated_at": "2026-04-22T09:30:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-06-created",
+          "order_id": "ord-06",
+          "action_type": "creation",
+          "staff_username": "sarah",
+          "timestamp": "2026-04-22T09:30:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @sarah (Initial creation). Wadarta: $450, Hormaris: $0, Deyn bilow ah: $450",
+          "previous_debt": 0,
+          "debt_balance_after": 450,
+          "total_price_after": 450,
+          "total_paid_after": 0,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-07",
@@ -535,7 +579,22 @@
       "price_entered_by": "ali",
       "price_entered_at": "2026-04-21T15:00:00Z",
       "created_at": "2026-04-21T15:00:00Z",
-      "updated_at": "2026-04-21T16:00:00Z"
+      "updated_at": "2026-04-21T16:00:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-07-created",
+          "order_id": "ord-07",
+          "action_type": "creation",
+          "staff_username": "ali",
+          "timestamp": "2026-04-21T15:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @ali (Initial creation). Wadarta: $120, Hormaris: $120, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 120,
+          "total_paid_after": 120,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-08",
@@ -570,7 +629,22 @@
       "price_entered_by": "mohamed",
       "price_entered_at": "2026-04-20T11:20:00Z",
       "created_at": "2026-04-20T11:20:00Z",
-      "updated_at": "2026-04-20T11:20:00Z"
+      "updated_at": "2026-04-20T11:20:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-08-created",
+          "order_id": "ord-08",
+          "action_type": "creation",
+          "staff_username": "mohamed",
+          "timestamp": "2026-04-20T11:20:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @mohamed (Initial creation). Wadarta: $550, Hormaris: $550, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 550,
+          "total_paid_after": 550,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-09",
@@ -599,7 +673,35 @@
       "price_entered_by": "blc00001",
       "price_entered_at": "2026-04-18T10:00:00Z",
       "created_at": "2026-04-18T10:00:00Z",
-      "updated_at": "2026-04-18T10:30:00Z"
+      "updated_at": "2026-04-18T10:30:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-09-created",
+          "order_id": "ord-09",
+          "action_type": "creation",
+          "staff_username": "blc00001",
+          "timestamp": "2026-04-18T10:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @blc00001 (Initial creation). Wadarta: $1800, Hormaris: $700, Deyn bilow ah: $1100",
+          "previous_debt": 0,
+          "debt_balance_after": 1100,
+          "total_price_after": 1800,
+          "total_paid_after": 700,
+          "reason": "Diiwaangalinta dalabka"
+        },
+        {
+          "id": "PAY-1004",
+          "order_id": "ord-09",
+          "action_type": "payment_received",
+          "staff_username": "ali",
+          "timestamp": "2026-04-18T10:15:00Z",
+          "description": "Lacag bixin $700 (Zaad) waxa qabtay @ali. Deyn harka: $1100",
+          "previous_debt": 1800,
+          "debt_balance_after": 1100,
+          "total_price_after": 1800,
+          "total_paid_after": 700,
+          "reason": "Deposit installment via Zaad service"
+        }
+      ]
     },
     {
       "id": "ord-10",
@@ -629,7 +731,22 @@
       "price_entered_by": "sarah",
       "price_entered_at": "2026-04-16T12:00:00Z",
       "created_at": "2026-04-16T12:00:00Z",
-      "updated_at": "2026-04-16T12:00:00Z"
+      "updated_at": "2026-04-16T12:00:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-10-created",
+          "order_id": "ord-10",
+          "action_type": "creation",
+          "staff_username": "sarah",
+          "timestamp": "2026-04-16T12:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @sarah (Initial creation). Wadarta: $950, Hormaris: $950, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 950,
+          "total_paid_after": 950,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-11",
@@ -664,7 +781,22 @@
       "price_entered_by": "mohamed",
       "price_entered_at": "2026-04-26T14:00:00Z",
       "created_at": "2026-04-26T14:00:00Z",
-      "updated_at": "2026-04-26T14:00:00Z"
+      "updated_at": "2026-04-26T14:00:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-11-created",
+          "order_id": "ord-11",
+          "action_type": "creation",
+          "staff_username": "mohamed",
+          "timestamp": "2026-04-26T14:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @mohamed (Initial creation). Wadarta: $620, Hormaris: $620, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 620,
+          "total_paid_after": 620,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-12",
@@ -696,7 +828,22 @@
       "price_entered_by": "sarah",
       "price_entered_at": "2026-04-12T09:00:00Z",
       "created_at": "2026-04-12T09:00:00Z",
-      "updated_at": "2026-04-14T11:00:00Z"
+      "updated_at": "2026-04-14T11:00:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-12-created",
+          "order_id": "ord-12",
+          "action_type": "creation",
+          "staff_username": "sarah",
+          "timestamp": "2026-04-12T09:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @sarah (Initial creation). Wadarta: $350, Hormaris: $350, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 350,
+          "total_paid_after": 350,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-14",
@@ -725,7 +872,22 @@
       "price_entered_by": "blc00001",
       "price_entered_at": "2026-04-20T10:00:00Z",
       "created_at": "2026-04-20T10:00:00Z",
-      "updated_at": "2026-04-21T11:00:00Z"
+      "updated_at": "2026-04-21T11:00:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-14-created",
+          "order_id": "ord-14",
+          "action_type": "creation",
+          "staff_username": "blc00001",
+          "timestamp": "2026-04-20T10:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @blc00001 (Initial creation). Wadarta: $2600, Hormaris: $2600, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 2600,
+          "total_paid_after": 2600,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     },
     {
       "id": "ord-15",
@@ -753,7 +915,22 @@
       "price_entered_by": "ali",
       "price_entered_at": "2026-04-22T14:00:00Z",
       "created_at": "2026-04-22T14:00:00Z",
-      "updated_at": "2026-04-23T12:00:00Z"
+      "updated_at": "2026-04-23T12:00:00Z",
+      "modifications_history": [
+        {
+          "id": "mod-ord-15-created",
+          "order_id": "ord-15",
+          "action_type": "creation",
+          "staff_username": "ali",
+          "timestamp": "2026-04-22T14:00:00Z",
+          "description": "Dalabka waxa diiwaan galiyay @ali (Initial creation). Wadarta: $80, Hormaris: $80, Deyn bilow ah: $0",
+          "previous_debt": 0,
+          "debt_balance_after": 0,
+          "total_price_after": 80,
+          "total_paid_after": 80,
+          "reason": "Diiwaangalinta dalabka"
+        }
+      ]
     }
   ],
   "payments": [
@@ -1178,13 +1355,33 @@
   ],
   "notifications": [
     {
+      "id": "notif-1791372808233",
+      "type": "payment",
+      "title": "Payment Received",
+      "message": "Payment of $500 received for order BAL-2026-00017 by blc00002. Balance: $500",
+      "related_record_id": "BAL-2026-00017",
+      "user_id": "all",
+      "read": false,
+      "created_at": "2026-10-07T11:33:28.233Z"
+    },
+    {
+      "id": "notif-1791372808213",
+      "type": "order",
+      "title": "New Order Created",
+      "message": "Order BAL-2026-00017 (Flight Ticket) was created by blc00002.",
+      "related_record_id": "BAL-2026-00017",
+      "user_id": "all",
+      "read": false,
+      "created_at": "2026-10-07T11:33:28.213Z"
+    },
+    {
       "id": "notif-1791019001397",
       "type": "order",
       "title": "New Order Created",
       "message": "Order BAL-2026-00016 (Flight Ticket) was created by blc00002.",
       "related_record_id": "BAL-2026-00016",
       "user_id": "all",
-      "read": false,
+      "read": true,
       "created_at": "2026-10-03T09:16:41.397Z"
     },
     {
@@ -1194,7 +1391,7 @@
       "message": "Order BAL-2026-00015 (Flight Ticket) was created by blc00001.",
       "related_record_id": "BAL-2026-00015",
       "user_id": "all",
-      "read": false,
+      "read": true,
       "created_at": "2026-10-03T08:51:17.922Z"
     },
     {
@@ -1204,7 +1401,7 @@
       "message": "Order BAL-2026-00015 (Visa Service) was created by blc00001.",
       "related_record_id": "BAL-2026-00015",
       "user_id": "all",
-      "read": false,
+      "read": true,
       "created_at": "2026-10-02T12:47:55.150Z"
     },
     {
@@ -1214,7 +1411,7 @@
       "title": "New Order Received",
       "message": "Order BAL-2026-00011 has been created for Ahmed Hassan Farah.",
       "related_record_id": "BAL-2026-00011",
-      "read": false,
+      "read": true,
       "created_at": "2026-10-01T09:14:01.592Z"
     },
     {
@@ -1224,7 +1421,7 @@
       "title": "New Internal Message",
       "message": "New message from Sarah Warsame in Operations & Emergency Ticketing.",
       "related_record_id": "conv-02",
-      "read": false,
+      "read": true,
       "created_at": "2026-10-01T09:07:01.592Z"
     },
     {
@@ -1234,7 +1431,7 @@
       "title": "Payment Received",
       "message": "Payment of $1,200 received for Order BAL-2026-00001.",
       "related_record_id": "BAL-2026-00001",
-      "read": false,
+      "read": true,
       "created_at": "2026-10-01T08:19:01.592Z"
     },
     {
@@ -1259,6 +1456,397 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "act-1791372808251-363",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Order Deleted",
+      "entity_type": "order",
+      "entity_id": "BAL-2026-00017",
+      "details": "Deleted by: blc00001 | Deleted order BAL-2026-00017",
+      "previous_value": {
+        "id": "ord-1791372808207",
+        "order_number": "BAL-2026-00017",
+        "customer_id": "cust-1791372808207",
+        "service_type": "Flight Ticket",
+        "status": "Debt",
+        "payment_type": "Debt",
+        "created_by": "blc00002",
+        "created_by_user_id": "usr-staff-1790960387058",
+        "assigned_staff": "blc00002",
+        "assigned_staff_id": null,
+        "total_price": 1200,
+        "amount_paid": 700,
+        "outstanding_debt": 500,
+        "currency": "USD",
+        "service_details": {
+          "departure_city": "Mogadishu (MGQ)",
+          "destination": "Nairobi (NBO)",
+          "departure_date": "2026-11-01",
+          "passenger_names": [
+            "Jaamac Warsame Guuleed"
+          ]
+        },
+        "notes": "Test flight booking with remaining debt",
+        "price_entered_by": "blc00002",
+        "price_entered_at": "2026-10-07T11:33:28.207Z",
+        "created_at": "2026-10-07T11:33:28.207Z",
+        "updated_at": "2026-10-07T11:33:28.228Z",
+        "status_history": [
+          {
+            "id": "osh-1791372808207",
+            "order_id": "ord-1791372808207",
+            "old_status": null,
+            "new_status": "Debt",
+            "changed_by": "blc00002",
+            "reason": "Initial order creation",
+            "created_at": "2026-10-07T11:33:28.207Z"
+          }
+        ],
+        "assignment_history": [],
+        "modifications_history": [
+          {
+            "id": "mod-1791372808207-1",
+            "order_id": "ord-1791372808207",
+            "action_type": "creation",
+            "staff_username": "blc00002",
+            "timestamp": "2026-10-07T11:33:28.207Z",
+            "description": "Dalabka waxa diiwaan galiyay @blc00002 (Adeegga: Flight Ticket). Wadarta: $1200, Hormaris: $200, Deyn harka: $1000",
+            "previous_debt": 0,
+            "debt_balance_after": 1000,
+            "total_price_after": 1200,
+            "total_paid_after": 200,
+            "reason": "Abuuritaanka dalabka"
+          },
+          {
+            "id": "mod-1791372808228",
+            "order_id": "ord-1791372808207",
+            "action_type": "payment_received",
+            "staff_username": "blc00002",
+            "timestamp": "2026-10-07T11:33:28.228Z",
+            "description": "Lacag-bixin $500 (EVC Plus) waxa qabtay @blc00002 - Partial payment of 500. Deyn harka: $500",
+            "previous_debt": 1000,
+            "debt_balance_after": 500,
+            "total_price_after": 1200,
+            "total_paid_after": 700,
+            "reason": "Partial payment of 500"
+          }
+        ]
+      },
+      "created_at": "2026-10-07T11:33:28.251Z"
+    },
+    {
+      "id": "act-1791372808231-496",
+      "user_id": "usr-staff-1790960387058",
+      "username": "blc00002",
+      "action": "Payment Received",
+      "entity_type": "payment",
+      "entity_id": "PAY-1008",
+      "details": "Financial update by: blc00002 | Payment of $500 for BAL-2026-00017. Remaining debt: $500",
+      "previous_value": {
+        "debt": 1000
+      },
+      "new_value": {
+        "debt": 500,
+        "total_paid": 700
+      },
+      "created_at": "2026-10-07T11:33:28.231Z"
+    },
+    {
+      "id": "act-1791372808210-851",
+      "user_id": "usr-staff-1790960387058",
+      "username": "blc00002",
+      "action": "Order Created",
+      "entity_type": "order",
+      "entity_id": "BAL-2026-00017",
+      "details": "Created by: blc00002 | Order BAL-2026-00017 for Jaamac Warsame Guuleed (Flight Ticket)",
+      "new_value": {
+        "total_price": 1200,
+        "status": "Debt",
+        "payment_type": "Debt"
+      },
+      "created_at": "2026-10-07T11:33:28.210Z"
+    },
+    {
+      "id": "act-1791372808190-215",
+      "user_id": "usr-staff-1790960387058",
+      "username": "blc00002",
+      "action": "Login",
+      "entity_type": "auth",
+      "entity_id": "usr-staff-1790960387058",
+      "details": "Staff logged in: blc00002",
+      "created_at": "2026-10-07T11:33:28.190Z"
+    },
+    {
+      "id": "act-1791372807953-63",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Login",
+      "entity_type": "auth",
+      "entity_id": "usr-admin-01",
+      "details": "Super Admin logged in: blc00001",
+      "created_at": "2026-10-07T11:33:27.953Z"
+    },
+    {
+      "id": "act-1791371974921-327",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Employee Activated",
+      "entity_type": "employee",
+      "entity_id": "usr-staff-1790960387058",
+      "details": "Employee blc00002 activated and unlocked by blc00001",
+      "previous_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "disabled",
+        "disabled_reason": "Ok"
+      },
+      "new_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "active",
+        "disabled_reason": null
+      },
+      "created_at": "2026-10-07T11:19:34.921Z"
+    },
+    {
+      "id": "act-1791371958721-883",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Employee Disabled",
+      "entity_type": "employee",
+      "entity_id": "usr-staff-1790960387058",
+      "details": "Employee blc00002 disabled by blc00001. Reason: Ok",
+      "previous_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "active",
+        "disabled_reason": null
+      },
+      "new_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "disabled",
+        "disabled_reason": "Ok"
+      },
+      "created_at": "2026-10-07T11:19:18.721Z"
+    },
+    {
+      "id": "act-1791371951535-942",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Employee Activated",
+      "entity_type": "employee",
+      "entity_id": "usr-staff-1790960387058",
+      "details": "Employee blc00002 activated and unlocked by blc00001",
+      "previous_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "disabled",
+        "disabled_reason": "DIS USER IS DISABLED PY WRONG PASSWORD"
+      },
+      "new_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "active",
+        "disabled_reason": null
+      },
+      "created_at": "2026-10-07T11:19:11.535Z"
+    },
+    {
+      "id": "act-1791371910875-263",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Login",
+      "entity_type": "auth",
+      "entity_id": "usr-admin-01",
+      "details": "Super Admin logged in: blc00001",
+      "created_at": "2026-10-07T11:18:30.875Z"
+    },
+    {
+      "id": "act-1791371878420-729",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Logout",
+      "entity_type": "auth",
+      "entity_id": "usr-admin-01",
+      "details": "User logged out: blc00001",
+      "created_at": "2026-10-07T11:17:58.420Z"
+    },
+    {
+      "id": "act-1791371873787-569",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Employee Activated",
+      "entity_type": "employee",
+      "entity_id": "usr-staff-1790960387058",
+      "details": "Employee blc00002 activated and unlocked by blc00001",
+      "previous_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "disabled",
+        "disabled_reason": "Ok"
+      },
+      "new_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "active",
+        "disabled_reason": null
+      },
+      "created_at": "2026-10-07T11:17:53.787Z"
+    },
+    {
+      "id": "act-1791371868124-360",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Login",
+      "entity_type": "auth",
+      "entity_id": "usr-admin-01",
+      "details": "Super Admin logged in: blc00001",
+      "created_at": "2026-10-07T11:17:48.124Z"
+    },
+    {
+      "id": "act-1791371836919-949",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Logout",
+      "entity_type": "auth",
+      "entity_id": "usr-admin-01",
+      "details": "User logged out: blc00001",
+      "created_at": "2026-10-07T11:17:16.919Z"
+    },
+    {
+      "id": "act-1791371796520-800",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Employee Disabled",
+      "entity_type": "employee",
+      "entity_id": "usr-staff-1790960387058",
+      "details": "Employee blc00002 disabled by blc00001. Reason: Ok",
+      "previous_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "active",
+        "disabled_reason": null
+      },
+      "new_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "disabled",
+        "disabled_reason": "Ok"
+      },
+      "created_at": "2026-10-07T11:16:36.520Z"
+    },
+    {
+      "id": "act-1791371790625-599",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Employee Activated",
+      "entity_type": "employee",
+      "entity_id": "usr-staff-1790960387058",
+      "details": "Employee blc00002 activated and unlocked by blc00001",
+      "previous_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "disabled",
+        "disabled_reason": "Omar"
+      },
+      "new_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "active",
+        "disabled_reason": null
+      },
+      "created_at": "2026-10-07T11:16:30.625Z"
+    },
+    {
+      "id": "act-1791371749156-322",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Employee Disabled",
+      "entity_type": "employee",
+      "entity_id": "usr-staff-1790960387058",
+      "details": "Employee blc00002 disabled by blc00001. Reason: Omar",
+      "previous_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "active",
+        "disabled_reason": null
+      },
+      "new_value": {
+        "id": "prof-1790960387169",
+        "user_id": "usr-staff-1790960387058",
+        "full_name": "CUMAR TAAKUUR",
+        "phone": "618590999",
+        "email": "cumartaakuur7888@gmail.com",
+        "department": "Finance & Accounts",
+        "status": "disabled",
+        "disabled_reason": "Omar"
+      },
+      "created_at": "2026-10-07T11:15:49.156Z"
+    },
+    {
+      "id": "act-1791371037265-91",
+      "user_id": "usr-admin-01",
+      "username": "blc00001",
+      "action": "Login",
+      "entity_type": "auth",
+      "entity_id": "usr-admin-01",
+      "details": "Super Admin logged in: blc00001",
+      "created_at": "2026-10-07T11:03:57.265Z"
+    },
     {
       "id": "act-1791039392101-490",
       "user_id": "usr-admin-01",

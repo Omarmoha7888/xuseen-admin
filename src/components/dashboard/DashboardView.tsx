@@ -51,13 +51,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const loadDashboardData = async () => {
     try {
+      const isSuperAdmin = user?.role === 'super_admin';
       const [m, ords, trxs] = await Promise.all([
         api.getDashboardMetrics(),
         api.getOrders(),
         api.getTransactions(),
       ]);
       setMetrics(m);
-      setRecentOrders(ords.slice(0, 5));
+      const myOrders = isSuperAdmin
+        ? ords
+        : ords.filter(
+            (o) =>
+              o.created_by.toLowerCase() === user?.username.toLowerCase() ||
+              (o.assigned_staff && o.assigned_staff.toLowerCase() === user?.username.toLowerCase())
+          );
+      setRecentOrders(myOrders.slice(0, 5));
       setRecentTransactions(trxs.slice(0, 5));
     } catch (err) {
       console.warn('Could not load dashboard data at this time:', err);

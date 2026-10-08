@@ -24,6 +24,7 @@ import {
   Briefcase,
   X,
   Printer,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -50,7 +51,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'personal' | 'service' | 'financial' | 'status_timeline' | 'documents' | 'notes' | 'activity'
+    'personal' | 'service' | 'financial' | 'status_timeline' | 'documents' | 'notes' | 'activity' | 'debt_audit'
   >('service');
 
   // Modals & Forms
@@ -274,6 +275,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
           { id: 'documents', label: `Documents (${order.documents?.length || 0})` },
           { id: 'notes', label: 'Internal Notes' },
           { id: 'activity', label: 'Assignment & History' },
+          { id: 'debt_audit', label: 'Debt & Modification Audit' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -617,6 +619,183 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 8. DEBT & MODIFICATION AUDIT HISTORY */}
+      {activeTab === 'debt_audit' && (
+        <div className="bg-[#111726] border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div>
+              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <History className="w-4 h-4" />
+                <span>Taariikhda Diiwaangelinta, Wax-ka-beddelka Shaqaalaha & Deyn Harka</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Faahfaahinta sida dalabkan loo abuuray, inta shaqaale ee wax ka beddelay, iyo xisaabta deynta ku hartay markasta.
+              </p>
+            </div>
+            {order.outstanding_debt > 0 && (
+              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-500/15 text-red-400 border border-red-500/30 self-start sm:self-auto">
+                Deyn ku dhiman: ${order.outstanding_debt.toLocaleString()} {order.currency}
+              </span>
+            )}
+          </div>
+
+          {/* 1. Sida Dalabkan Loo Create Gareeyay */}
+          <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-5 space-y-3">
+            <span className="text-xs uppercase font-mono text-amber-400 font-bold tracking-wider block">
+              1. Sida Dalabka Loo Diiwaangeliyay (Creation Details)
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                <span className="text-[10px] text-slate-400 uppercase font-mono block">Shaqaalaha Diiwaangeliyay</span>
+                <span className="text-sm font-mono font-bold text-amber-300 mt-1 block">
+                  @{order.created_by}
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono">
+                  Order Creator
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                <span className="text-[10px] text-slate-400 uppercase font-mono block">Waqtiga La Diiwaangeliyay</span>
+                <span className="text-xs font-mono text-white mt-1 block font-semibold">
+                  {new Date(order.created_at).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                <span className="text-[10px] text-slate-400 uppercase font-mono block">Qiimaha Guud ee Bilowga</span>
+                <span className="text-sm font-mono font-bold text-white mt-1 block">
+                  ${(order.modifications_history?.[0]?.total_price_after ?? order.total_price).toLocaleString()} {order.currency}
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono">
+                  Hormaris: ${(order.modifications_history?.[0]?.total_paid_after ?? order.amount_paid).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                <span className="text-[10px] text-slate-400 uppercase font-mono block">Deyn Bilowgii Jirtay</span>
+                <span className="text-sm font-mono font-bold text-red-400 mt-1 block">
+                  ${(order.modifications_history?.[0]?.debt_balance_after ?? order.outstanding_debt).toLocaleString()} {order.currency}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Shaqaalaha Wax ka Beddelay Summary */}
+          {(() => {
+            const staffSet = new Set<string>();
+            if (order.created_by) staffSet.add(order.created_by);
+            order.modifications_history?.forEach((m) => {
+              if (m.staff_username) staffSet.add(m.staff_username);
+            });
+            order.status_history?.forEach((s) => {
+              if (s.changed_by) staffSet.add(s.changed_by);
+            });
+            order.payments?.forEach((p) => {
+              if (p.received_by) staffSet.add(p.received_by);
+            });
+            const distinctStaff = Array.from(staffSet);
+
+            return (
+              <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 font-bold flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block">
+                      Tirada Shaqaalaha Wax ka Beddelay Dalabkan: {distinctStaff.length} Shaqaale
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Dhammaan shaqaalaha wax ka beddelay ama lacag ka qabtay dalabkan
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {distinctStaff.map((staffName) => (
+                    <span
+                      key={staffName}
+                      className="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 font-mono text-[11px] border border-slate-700 font-medium"
+                    >
+                      @{staffName}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* 3. Diiwaanka Shaqaale Walbo Marka uu Wax ka Beddelay & Inta Balance Debt ku Hartay */}
+          <div className="space-y-3">
+            <span className="text-xs uppercase font-mono text-amber-400 font-bold tracking-wider block">
+              3. Taariikhda Wax-ka-beddelka Shaqaalaha & Inta Deyn ee ku Hartay (Timeline & Debt Balance)
+            </span>
+
+            {(!order.modifications_history || order.modifications_history.length === 0) ? (
+              <div className="p-6 text-center text-xs text-slate-500 bg-slate-900/40 rounded-2xl">
+                Weli wax isbeddel ah laguma samayn dalabkan.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-900 text-slate-400 uppercase font-mono text-[10px]">
+                    <tr>
+                      <th className="py-2.5 px-3">Shaqaalaha</th>
+                      <th className="py-2.5 px-3">Waqtiga</th>
+                      <th className="py-2.5 px-3">Waxa la qabtay</th>
+                      <th className="py-2.5 px-3">Inta Deyn ku hartay</th>
+                      <th className="py-2.5 px-3">Faahfaahin / Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800 text-slate-300">
+                    {order.modifications_history.map((mod, idx) => (
+                      <tr key={mod.id || idx} className="hover:bg-slate-900/30">
+                        <td className="py-3 px-3 font-mono font-bold text-amber-300">
+                          @{mod.staff_username}
+                        </td>
+                        <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">
+                          {new Date(mod.timestamp).toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              mod.action_type === 'payment_received'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : mod.action_type === 'creation'
+                                ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                                : mod.action_type === 'status_change'
+                                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                : 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                            }`}
+                          >
+                            {mod.action_type.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-mono font-black">
+                          {mod.debt_balance_after > 0 ? (
+                            <span className="text-red-400 bg-red-500/10 px-2.5 py-0.5 rounded-md border border-red-500/20">
+                              ${mod.debt_balance_after.toLocaleString()} {order.currency}
+                            </span>
+                          ) : (
+                            <span className="text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
+                              $0 (Paid Off)
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-slate-300">
+                          {mod.description || mod.reason || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

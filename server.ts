@@ -88,7 +88,7 @@ interface LoginAttemptTracker {
 const loginAttempts: Map<string, LoginAttemptTracker> = new Map();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 // Universal CORS & Preflight middleware (supports Cloud Run proxy, iframe, and local dev origins)
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -541,8 +541,40 @@ app.post('/api/orders/:id/adjustments', authenticateUser, requireSuperAdmin, (re
   }
 });
 
+app.get('/api/cash-counter', authenticateUser, (req: Request, res: Response) => {
+  const user = (req as any).user as User;
+  const staff = req.query.staff as string | undefined;
+  const info = dbManager.getCashCounterBalance(user, staff);
+  res.json(info);
+});
+
+app.post('/api/cash-counter/close', authenticateUser, (req: Request, res: Response) => {
+  const user = (req as any).user as User;
+  try {
+    const result = dbManager.closeCashCounter(user, req.body);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Xisaab xirka waa lagu guuldareystay.' });
+  }
+});
+
 app.get('/api/transactions', authenticateUser, (req: Request, res: Response) => {
+  const user = (req as any).user as User;
   let list = dbManager.getDb().transactions;
+
+  const isSuperAdmin = user.role === 'super_admin';
+  const isFinance =
+    user.profile?.department?.toLowerCase().includes('finance') ||
+    user.profile?.department?.toLowerCase().includes('account');
+
+  // Staff only sees their own transactions; Super Admin & Finance see all staff transactions
+  if (!isSuperAdmin && !isFinance) {
+    list = list.filter((t) => t.changed_by.toLowerCase() === user.username.toLowerCase());
+  } else if (req.query.staff && req.query.staff !== 'All') {
+    const staffQ = (req.query.staff as string).toLowerCase();
+    list = list.filter((t) => t.changed_by.toLowerCase() === staffQ);
+  }
+
   if (req.query.type) {
     list = list.filter((t) => t.transaction_type === req.query.type);
   }
@@ -576,14 +608,24 @@ app.get('/api/customers', authenticateUser, (req: Request, res: Response) => {
 });
 
 app.get('/api/customers/:id', authenticateUser, (req: Request, res: Response) => {
-  const cust = dbManager.getDb().customers.find((c) => c.id === req.params.id);
-  if (!cust) return res.status(404).json({ error: 'Customer not found.' });
+  const details = dbManager.getCustomerWithDetails(req.params.id);
+  if (!details) return res.status(404).json({ error: 'Customer not found.' });
+  res.json(details);
+});
 
-  const orders = dbManager.getDb().orders.filter((o) => o.customer_id === cust.id);
-  res.json({
-    customer: cust,
-    orders,
-  });
+app.delete('/api/customers/:id', authenticateUser, (req: Request, res: Response) => {
+  const user = (req as any).user as User;
+  try {
+    dbManager.deleteCustomer(req.params.id, user);
+    res.json({ success: true, message: 'Customer deleted successfully.' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to delete customer.' });
+  }
+});
+
+app.post('/api/customers/clear-all', authenticateUser, (_req: Request, res: Response) => {
+  dbManager.clearAllCustomers();
+  res.json({ success: true, message: 'All customers cleared successfully.' });
 });
 
 app.post('/api/customers', authenticateUser, (req: Request, res: Response) => {
@@ -607,6 +649,7 @@ app.post('/api/customers', authenticateUser, (req: Request, res: Response) => {
   };
 
   dbManager.getDb().customers.unshift(newCust);
+  dbManager.saveToDisk();
   res.status(201).json(newCust);
 });
 
@@ -811,7 +854,7 @@ async function startServer() {
     return; // Standalone server loop is not used in Vercel Serverless environment
   }
 
-  const serverPort = 3000;
+  const serverPort = PORT;
 
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');

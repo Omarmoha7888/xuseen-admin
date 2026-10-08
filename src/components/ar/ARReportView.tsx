@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   DollarSign,
   AlertCircle,
@@ -38,6 +38,8 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Unpaid' | 'Partially Paid' | 'Paid' | 'Recent' | 'Older'>('All');
+  const [selectedStaff, setSelectedStaff] = useState<string>('All');
+  const [selectedOrderForAudit, setSelectedOrderForAudit] = useState<any | null>(null);
 
   // Modals
   const [selectedOrderForPay, setSelectedOrderForPay] = useState<any | null>(null);
@@ -167,6 +169,13 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
     }
 
     // Quick filter
+    if (selectedStaff !== 'All') {
+      const qStaff = selectedStaff.toLowerCase();
+      if (createdBy.toLowerCase() !== qStaff && assignedEmp.toLowerCase() !== qStaff) {
+        return false;
+      }
+    }
+
     if (statusFilter === 'Unpaid') return debtStatus === 'Unpaid';
     if (statusFilter === 'Partially Paid') return debtStatus === 'Partially Paid';
     if (statusFilter === 'Paid') return debtStatus === 'Paid';
@@ -177,6 +186,19 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
   });
 
   const summary = arData.summary || {};
+
+  const availableStaff = useMemo(() => {
+    const set = new Set<string>();
+    arData.orders.forEach((o: any) => {
+      if (o.created_by) set.add(o.created_by);
+      if (o.assigned_employee && o.assigned_employee !== 'Unassigned') set.add(o.assigned_employee);
+      if (o.assigned_staff && o.assigned_staff !== 'Unassigned') set.add(o.assigned_staff);
+    });
+    if (user?.username) set.add(user.username);
+    set.add('blc00001');
+    set.add('blc00002');
+    return Array.from(set).sort();
+  }, [arData.orders, user]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
@@ -310,6 +332,26 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
             ))}
           </div>
 
+          {/* Staff Filter Dropdown */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+              <Users className="w-3.5 h-3.5 text-amber-400" />
+              <span>Shaqaale:</span>
+            </span>
+            <select
+              value={selectedStaff}
+              onChange={(e) => setSelectedStaff(e.target.value)}
+              className="px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 font-mono cursor-pointer"
+            >
+              <option value="All">Dhamaan Shaqaalaha (All Staff)</option>
+              {availableStaff.map((st) => (
+                <option key={st} value={st}>
+                  @{st}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Search Box */}
           <div className="relative min-w-[240px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -404,6 +446,15 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
                       <td className="py-3 px-3.5 font-mono text-slate-400">{daysOut} days</td>
                       <td className="py-3 px-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setSelectedOrderForAudit(ord)}
+                            title="Eeg Taariikhda Wax-ka-beddelka & Deyn Harka"
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold transition flex items-center gap-1"
+                          >
+                            <History className="w-3 h-3" />
+                            <span>Audit</span>
+                          </button>
+
                           <button
                             onClick={() => onSelectOrder(internalId)}
                             className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition"
@@ -645,6 +696,179 @@ export const ARReportView: React.FC<ARReportViewProps> = ({ onSelectOrder }) => 
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Audit & Debt Modifications History Modal */}
+      {selectedOrderForAudit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+          <div className="bg-[#121826] border border-amber-500/30 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative text-white max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 font-bold flex items-center justify-center">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>Audit: {selectedOrderForAudit.order_id || selectedOrderForAudit.order_number}</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                      Deyn: ${(selectedOrderForAudit.outstanding_debt || 0).toLocaleString()} USD
+                    </span>
+                  </h3>
+                  <span className="text-xs text-slate-400">
+                    Macmiilka: <strong className="text-slate-200">{selectedOrderForAudit.customer_name || 'Customer'}</strong> • {selectedOrderForAudit.service_type}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedOrderForAudit(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto mt-4 space-y-5 pr-1 text-xs">
+              {/* Sida loo create gareeyay */}
+              <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 space-y-2">
+                <span className="text-[11px] uppercase font-mono text-amber-400 font-bold tracking-wider block">
+                  1. Sida Dalabkan Loo Diiwaangeliyay (Creation Details)
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-center">
+                  <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                    <span className="text-[10px] text-slate-400 uppercase font-mono block">Diiwaangeliyay</span>
+                    <span className="text-xs font-mono font-bold text-amber-300 mt-0.5 block">
+                      @{selectedOrderForAudit.created_by || 'Staff'}
+                    </span>
+                  </div>
+                  <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                    <span className="text-[10px] text-slate-400 uppercase font-mono block">Waqtiga</span>
+                    <span className="text-[11px] font-mono text-white mt-0.5 block font-medium">
+                      {selectedOrderForAudit.created_at ? new Date(selectedOrderForAudit.created_at).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                    <span className="text-[10px] text-slate-400 uppercase font-mono block">Qiimaha Guud</span>
+                    <span className="text-xs font-mono font-bold text-white mt-0.5 block">
+                      ${(selectedOrderForAudit.total_price || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                    <span className="text-[10px] text-slate-400 uppercase font-mono block">Deyn Bilowgii</span>
+                    <span className="text-xs font-mono font-bold text-red-400 mt-0.5 block">
+                      ${(selectedOrderForAudit.outstanding_debt || 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Shaqaalaha Wax ka Beddelay */}
+              {(() => {
+                const staffList = new Set<string>();
+                if (selectedOrderForAudit.created_by) staffList.add(selectedOrderForAudit.created_by);
+                if (selectedOrderForAudit.assigned_employee && selectedOrderForAudit.assigned_employee !== 'Unassigned') {
+                  staffList.add(selectedOrderForAudit.assigned_employee);
+                }
+                selectedOrderForAudit.modifications_history?.forEach((m: any) => {
+                  if (m.staff_username) staffList.add(m.staff_username);
+                });
+                selectedOrderForAudit.payments?.forEach((p: any) => {
+                  if (p.received_by) staffList.add(p.received_by);
+                });
+                const staffArr = Array.from(staffList);
+
+                return (
+                  <div className="p-3.5 bg-slate-900/60 rounded-2xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div>
+                      <span className="font-bold text-white block">
+                        Tirada Shaqaalaha Wax ka Beddelay: {staffArr.length} Shaqaale
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        Shaqaalaha ku lug yeeshay dalabkan
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {staffArr.map((st) => (
+                        <span key={st} className="px-2 py-0.5 bg-slate-800 rounded-md text-[11px] font-mono text-amber-300 border border-slate-700">
+                          @{st}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Modifications Timeline with Remaining Debt Balance */}
+              <div className="space-y-2.5">
+                <span className="text-[11px] uppercase font-mono text-amber-400 font-bold tracking-wider block">
+                  2. Taariikhda Wax-ka-beddelka & Inta Deyn ee ku Hartay
+                </span>
+
+                {(!selectedOrderForAudit.modifications_history || selectedOrderForAudit.modifications_history.length === 0) ? (
+                  <div className="p-4 bg-slate-900/40 rounded-xl text-center text-slate-400">
+                    Weli wax isbeddel dheeraad ah laguma samayn dalabkan.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-900 text-slate-400 uppercase font-mono text-[10px]">
+                        <tr>
+                          <th className="py-2.5 px-3">Shaqaalaha</th>
+                          <th className="py-2.5 px-3">Waqtiga</th>
+                          <th className="py-2.5 px-3">Falka</th>
+                          <th className="py-2.5 px-3">Deyn Harka</th>
+                          <th className="py-2.5 px-3">Faahfaahin</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/80 text-slate-300">
+                        {selectedOrderForAudit.modifications_history.map((mod: any, idx: number) => (
+                          <tr key={mod.id || idx} className="hover:bg-slate-900/30">
+                            <td className="py-2.5 px-3 font-mono font-bold text-amber-300">
+                              @{mod.staff_username}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono text-slate-400 text-[10px]">
+                              {new Date(mod.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="text-[10px] font-semibold text-white">
+                                {mod.action_type?.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 font-mono font-bold text-red-400">
+                              ${(mod.debt_balance_after || 0).toLocaleString()}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-400 text-[11px]">
+                              {mod.description || mod.reason || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex justify-between items-center shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const id = selectedOrderForAudit.internal_id || selectedOrderForAudit.id || selectedOrderForAudit.order_number;
+                  setSelectedOrderForAudit(null);
+                  onSelectOrder(id);
+                }}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition"
+              >
+                Fur Bogga Dalabka (Open Full Order)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedOrderForAudit(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition"
+              >
+                Xir
+              </button>
+            </div>
           </div>
         </div>
       )}
